@@ -2,6 +2,7 @@
 import random
 import string
 
+
 def find_and_replace(permutation, input_file, output_file):
     with open(input_file, 'r') as file_in, open(output_file, 'w') as file_out:
         for line in file_in:
@@ -15,6 +16,7 @@ def find_and_replace(permutation, input_file, output_file):
                 else:
                     converted_line += char
             file_out.write(converted_line)
+
 
 def read_files():
     # Load the word list, and the letter and digraph frequencies
@@ -32,11 +34,12 @@ def read_files():
         for line in f:
             # only proccess lines that contain a tab character
             if "\t" in line:
-                print(line)
                 letters_pair_freq[line.strip().split('\t')[1].lower()] = float(line.strip().split('\t')[0])
                 # last line in file should be for "ZZ"
                 if line.strip().split('\t')[1].lower() == "zz":
                     break
+    return common_words_set, letter_freqs, letters_pair_freq
+
 
 def generate_permutations(starting_population):
     alphabet = list(string.ascii_lowercase)
@@ -52,6 +55,7 @@ def generate_permutations(starting_population):
 
 if __name__ == '__main__':
     perm = generate_permutations(10)
+    # print(perm)
     find_and_replace(perm[0], "enc.txt", "output.txt")
     read_files()
 
