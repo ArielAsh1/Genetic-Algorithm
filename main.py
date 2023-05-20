@@ -54,5 +54,6 @@ if __name__ == '__main__':
     perm = generate_permutations(10)
     find_and_replace(perm[0], "enc.txt", "output.txt")
 
+
     read_files()
 
