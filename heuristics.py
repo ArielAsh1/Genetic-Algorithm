@@ -1,6 +1,9 @@
 import collections
 import string
 
+COMMON_WORDS_SCORE = 1
+IMPORTANT_WORDS_SCORE = 2
+
 
 def compute_perm_letter_freq(filename, known_letter_freqs):
     """ for each permutation, compute the frequencies of each letter on our deciphered output text,
@@ -84,9 +87,9 @@ def search_common_words(perm_deciphered_file, common_words):
                 if word.isalpha():
                     # TODO: normalize score points
                     if word.lower() in common_words:
-                        file_score += 1
+                        file_score += COMMON_WORDS_SCORE
                     elif word.lower in important_words:
-                        file_score += 5
+                        file_score += IMPORTANT_WORDS_SCORE
     return file_score
 
 
