@@ -5,7 +5,7 @@ import string
 import heuristics
 
 ELITE_PERCENT = 0.1
-MUTATION_PERCENT = 0.05
+MUTATION_PERCENT = 0.1
 POPULATION_SIZE = 100
 # global variables
 common_words = set()
