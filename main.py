@@ -4,9 +4,11 @@ import string
 
 import heuristics
 
-ELITE_PERCENT = 0.1
+ELITE_PERCENT = 0.2
 MUTATION_PERCENT = 0.1
-POPULATION_SIZE = 100
+DROPTOUT_PERCENT = 0.2
+POPULATION_SIZE = 500
+
 
 # global variables
 common_words = set()
@@ -194,13 +196,15 @@ def run_round(permutations):
     sorted_indices = sorted(set(range(len(fitness_scores))), key=lambda x: fitness_scores[x], reverse=True)
     # Calculate the number of the top scores that will be used in the next round
     num_top_scores = int(len(fitness_scores) * ELITE_PERCENT)
+    num_dropout_scores = int(len(fitness_scores) * DROPTOUT_PERCENT)
     # Select these top ELITE_PERCENT of fitness scores and their corresponding permutations
     top_scores_indices = sorted_indices[:num_top_scores]
+    remaining_indices = sorted_indices[:-num_dropout_scores]
     top_permutations = [permutations[index] for index in top_scores_indices]
 
     # extract the non-top permutations
-    top_scores_set = set(top_scores_indices)
-    remaining_permutations = [permutations[i] for i in range(len(permutations)) if i not in top_scores_set]
+    top_scores_set = set(remaining_indices)
+    remaining_permutations = [permutations[i] for i in range(len(permutations)) if i in top_scores_set]
     # implement crossover on the non-top remaining_permutations
     for _ in range((POPULATION_SIZE - num_top_scores) // 2):
         # crossover between 2 non-top perms:
@@ -232,12 +236,21 @@ def run_round(permutations):
     return next_round_perms
 
 
+def check_common_words_usage():
+    global common_words
+    with open('output.txt', 'r') as f:
+        output_words = set(line.strip() for line in f)
+    intersect_words = len(common_words) - len(common_words - output_words)
+    return intersect_words
+
+
 if __name__ == '__main__':
     read_files()
     permutations = generate_permutations(POPULATION_SIZE)
     # TODO: run loop that checks for convergence
-    for i in range(POPULATION_SIZE):
-        print("Round: ", i)
+    for i in range(100):
+        print("Round: ", i + 1)
         permutations = run_round(permutations)
+        print("Num of intersecting words: " + str(len(check_common_words_usage())))
 
 
