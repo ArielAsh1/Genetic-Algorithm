@@ -4,24 +4,61 @@ import string
 COMMON_WORDS_SCORE = 1
 IMPORTANT_WORDS_SCORE = 2
 
+def get_letter_score(filename, known_letter_freqs):
+    """ count the occurrences of each letter on our deciphered output text, and multiply that count with
+        the known frequency of that letter, which is given in the "Letter_Freq" file.
+    """
+    # a dict to count occurrences of each letter (keys copied from known_letter_freqs)
+    letter_counter = collections.Counter(dict.fromkeys(known_letter_freqs.keys(), 0))
+    with open(filename, 'r') as f:
+        deciphered_file = f.read().lower()
+    # Count occurrences of each letter in the deciphered_file
+    for letter in deciphered_file:
+        if letter in letter_counter:
+            letter_counter[letter] += 1
+
+    # Multiply the count of each letter by the known frequency of that letter
+    letter_scores = {letter: count * known_letter_freqs[letter] for letter, count in letter_counter.items()}
+    # Sum up the scores to get the total score
+    total_score = sum(letter_scores.values())
+    return total_score
+
+def get_pair_score(filename, known_letter_pairs_freqs):
+    """ count the occurrences of each pair of letters on our deciphered output text, and multiply that count with
+        the known frequency of that pair, which is given in the "Letter_Freq2" file.
+    """
+    # a dict to count occurrences of each pair of letters (keys copied from known_letter_pairs_freqs)
+    pair_counter = collections.Counter(dict.fromkeys(known_letter_pairs_freqs.keys(), 0))
+    with open(filename, 'r') as f:
+        deciphered_file = f.read().lower()
+    # Run through all pairs in the file and count their occurrences
+    for i in range(len(deciphered_file) - 1):
+        pair = deciphered_file[i:i + 2]
+        if pair in pair_counter:
+            pair_counter[pair] += 1
+
+    # Multiply the count of each pair by the known frequency of that pair
+    pair_scores = {pair: count * known_letter_pairs_freqs[pair] for pair,count in pair_counter.items()}
+    # Sum up the scores to get the total score
+    total_score = sum(pair_scores.values())
+    return total_score
 
 def compute_perm_letter_freq(filename, known_letter_freqs):
     """ for each permutation, compute the frequencies of each letter on our deciphered output text,
         and compare that frequency to the known frequency of the letter, which is in the given file "Letter_Freq".
     """
-    # Initialize a counter with keys copied from known_letter_freqs
+    # a dict to count occurrences of each letter (keys copied from known_letter_freqs)
     letter_counter = collections.Counter(dict.fromkeys(known_letter_freqs.keys(), 0))
     with open(filename, 'r') as f:
-        decrypted_file = f.read().lower()
-    # Count occurrences of each letter in the decrypted_file
-    for letter in decrypted_file:
+        deciphered_file = f.read().lower()
+    # Count occurrences of each letter in the deciphered_file
+    for letter in deciphered_file:
         if letter in letter_counter:
             letter_counter[letter] += 1
     # Calculate total number of letters
     total_letters = sum(letter_counter.values())
     # Calculate frequencies and store them in dict
     perm_letter_freqs = {letter: count / total_letters for letter, count in letter_counter.items()}
-
     return perm_letter_freqs
 
 
@@ -46,10 +83,10 @@ def compute_letter_pairs_freq(filename, known_letter_pairs_freqs):
     # Copy the keys from known_letter_pairs_freqs and initialize pair_counter with them
     pair_counter = collections.Counter(dict.fromkeys(known_letter_pairs_freqs.keys(), 0))
     with open(filename, 'r') as f:
-        decrypted_file = f.read().lower()
+        deciphered_file = f.read().lower()
     # Run through all pairs in the file and count their occurrences
-    for i in range(len(decrypted_file) - 1):
-        pair = decrypted_file[i:i + 2]
+    for i in range(len(deciphered_file) - 1):
+        pair = deciphered_file[i:i + 2]
         if pair in pair_counter:
             pair_counter[pair] += 1
 
@@ -57,7 +94,6 @@ def compute_letter_pairs_freq(filename, known_letter_pairs_freqs):
     total_pairs = sum(pair_counter.values())
     # Calculate frequencies and store them in a dictionary
     pair_freqs = {pair: count / total_pairs for pair, count in pair_counter.items()}
-
     return pair_freqs
 
 

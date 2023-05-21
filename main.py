@@ -5,8 +5,8 @@ import string
 import heuristics
 
 ELITE_PERCENT = 0.2
-MUTATION_PERCENT = 0.05
-POPULATION_SIZE = 100
+MUTATION_PERCENT = 0.1
+POPULATION_SIZE = 10
 # global variables
 common_words = set()
 known_letter_freqs = {}
@@ -73,6 +73,17 @@ def get_fitness(perm_deciphered_file):
     perm_total_score += words_score
 
     return perm_total_score
+
+def fitness_tal(perm_deciphered_file):
+    """ return this current perm fitness result.
+        lower fitness score means bad, higher means good score.
+    """
+    global common_words, known_letter_freqs, known_letter_pairs_freqs
+
+    # get the scores
+    letter_score = heuristics.get_letter_score(perm_deciphered_file, known_letter_freqs)
+    pairs_score = heuristics.get_pair_score(perm_deciphered_file, known_letter_pairs_freqs)
+    return letter_score + pairs_score
 
 
 def generate_permutations(starting_population):
@@ -142,48 +153,49 @@ def perform_mutation(permutation):
 
 
 def run_round(permutations):
+    """ Defines a single generation in the genetic algorithm.
+        Extracts the top percent of the permutations with the best fitness score to be used in the next round.
+        The remaining permutations create children permutations by crossover, which will also be used in the next round.
+        Together they make the new permutations list for the following round.
+    """
     fitness_scores = []
-    children = []
+    crossover_children = []
     for perm in permutations:
         find_and_replace(perm, "enc.txt", "output.txt")
-        curr_perm_score = get_fitness("output.txt")
+        # fitness option 1:
+        # curr_perm_score = get_fitness("output.txt")
+        # fitness option 2:
+        curr_perm_score = fitness_tal("output.txt")
         fitness_scores.append(curr_perm_score)
-        # print(perm)
-        # print(curr_perm_score)
-    # TODO: dear Orr, insert your index sorting magic here
-    # Sort fitness scores while maintaining their indices
+
+    # create a new indices DESC sorted list of the fitness scores, while fitness_scores maintains its original order.
     sorted_indices = sorted(set(range(len(fitness_scores))), key=lambda x: fitness_scores[x], reverse=True)
-    # Define the top X percent of fitness scores to consider
-    top_percent = ELITE_PERCENT
-    # Calculate the number of top scores to consider
-    num_top_scores = int(len(fitness_scores) * top_percent)
-    # Select the top X percent of fitness scores and their corresponding permutations
+    # Calculate the number of the top scores that will be used in the next round
+    num_top_scores = int(len(fitness_scores) * ELITE_PERCENT)
+    # Select these top ELITE_PERCENT of fitness scores and their corresponding permutations
     top_scores_indices = sorted_indices[:num_top_scores]
-    # # Append top permutations to children
-    # for index in top_scores_indices:
-    #     children.append(permutations[index])
     top_permutations = [permutations[index] for index in top_scores_indices]
-    # todo: implement crossover on the leftovers
-    # crossover the remainder of population
+
+    # extract the non-top permutations
     top_scores_set = set(top_scores_indices)
     remaining_permutations = [permutations[i] for i in range(len(permutations)) if i not in top_scores_set]
-    for i in range((POPULATION_SIZE - num_top_scores) // 2):
+    # implement crossover on the non-top remaining_permutations
+    for _ in range((POPULATION_SIZE - num_top_scores) // 2):
         parent1, parent2 = random.sample(remaining_permutations, 2)
         child1, child2 = crossover(parent1, parent2)
-        children.append(child1)
-        children.append(child2)
+        crossover_children.append(child1)
+        crossover_children.append(child2)
 
-    # todo: mutate some of the left overs
-    # mutate MUTATION_PERCENT from the remainder of permutations
-    for j in range(int(POPULATION_SIZE * MUTATION_PERCENT)):
-        # Get a random permutation from remaining_permutations
-        random_permutation = random.choice(children)    # should be remaining_permutations?
-        perform_mutation(random_permutation)
+    # selecting a subset of the new crossover children for another mutation
+    for _ in range(int(len(crossover_children) * MUTATION_PERCENT)):
+        # Get a random permutation from the crossover children
+        random_perm = random.choice(crossover_children)
+        perform_mutation(random_perm)
 
     print(max(fitness_scores))
-    children.extend(top_permutations)
-    return children
-
+    # add the top permutations to the crossover children and return as the next round permutations
+    next_round_perms = crossover_children + top_permutations
+    return next_round_perms
 
 
 if __name__ == '__main__':
