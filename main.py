@@ -4,7 +4,7 @@ import string
 
 import heuristics
 
-ELITE_PERCENT = 0.2
+ELITE_PERCENT = 0.1
 MUTATION_PERCENT = 0.05
 POPULATION_SIZE = 100
 # global variables
@@ -116,7 +116,7 @@ def check_duplicates(dictionary):
         values.add(value)
 
     if duplicates:
-        unused_letters = list(set(string.ascii_uppercase) - set(dictionary.values()))
+        unused_letters = list(set(string.ascii_lowercase) - set(dictionary.values()))
         for key, value in dictionary.items():
             if value in duplicates:
                 dictionary[key] = get_unique_value(values, unused_letters)
@@ -183,7 +183,6 @@ def run_round(permutations):
     print(max(fitness_scores))
     children.extend(top_permutations)
     return children
-
 
 
 if __name__ == '__main__':
