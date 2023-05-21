@@ -1,8 +1,8 @@
 import collections
 import string
 
-COMMON_WORDS_SCORE = 1
-IMPORTANT_WORDS_SCORE = 2
+COMMON_WORDS_SCORE = 10
+IMPORTANT_WORDS_SCORE = 20
 
 def get_letter_score(filename, known_letter_freqs):
     """ count the occurrences of each letter on our deciphered output text, and multiply that count with

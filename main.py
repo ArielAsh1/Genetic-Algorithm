@@ -7,6 +7,7 @@ import heuristics
 ELITE_PERCENT = 0.1
 MUTATION_PERCENT = 0.1
 POPULATION_SIZE = 100
+
 # global variables
 common_words = set()
 known_letter_freqs = {}
@@ -50,7 +51,6 @@ def read_files():
                     break
 
 
-
 def get_fitness(perm_deciphered_file):
     """ return this current perm fitness result.
         lower fitness score means bad, higher means good score.
@@ -73,6 +73,7 @@ def get_fitness(perm_deciphered_file):
     perm_total_score += words_score
 
     return perm_total_score
+
 
 def fitness_tal(perm_deciphered_file):
     """ return this current perm fitness result.
@@ -162,6 +163,7 @@ def run_round(permutations):
     crossover_children = []
     for perm in permutations:
         find_and_replace(perm, "enc.txt", "output.txt")
+        # TODO: decide on fitness function
         # fitness option 1:
         # curr_perm_score = get_fitness("output.txt")
         # fitness option 2:
@@ -180,6 +182,7 @@ def run_round(permutations):
     top_scores_set = set(top_scores_indices)
     remaining_permutations = [permutations[i] for i in range(len(permutations)) if i not in top_scores_set]
     # implement crossover on the non-top remaining_permutations
+    # TODO: fix...?
     for _ in range((POPULATION_SIZE - num_top_scores) // 2):
         parent1, parent2 = random.sample(remaining_permutations, 2)
         child1, child2 = crossover(parent1, parent2)
@@ -192,7 +195,15 @@ def run_round(permutations):
         random_perm = random.choice(crossover_children)
         perform_mutation(random_perm)
 
-    print(max(fitness_scores))
+    # prints to keep track of the algorithm progress
+    print("best fitness score: ", max(fitness_scores))
+    print("it's index: ", fitness_scores.index(max(fitness_scores)))
+    # TODO: BUG - at some point the permutations stop changing (maybe something wrong with crossover)
+    print("it's permutation: ", permutations[fitness_scores.index(max(fitness_scores))])
+    best_perm = permutations[fitness_scores.index(max(fitness_scores))]
+    # create the deciphered file with the best perm we found
+    find_and_replace(best_perm, "enc.txt", "output.txt")
+
     # add the top permutations to the crossover children and return as the next round permutations
     next_round_perms = crossover_children + top_permutations
     return next_round_perms
@@ -202,7 +213,8 @@ if __name__ == '__main__':
     read_files()
     permutations = generate_permutations(POPULATION_SIZE)
     # TODO: run loop that checks for convergence
-    for i in range(100):
+    for i in range(POPULATION_SIZE):
+        print("Round: ", i)
         permutations = run_round(permutations)
 
 
