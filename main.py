@@ -95,31 +95,47 @@ def generate_permutations(starting_population):
         permutation = {letter: substitute for letter, substitute in zip(string.ascii_lowercase, alphabet)}
         permutations.append(permutation)
 
-    # returns list of perm dicts
+    # returns a list of perm dicts
     return permutations
 
 
 def crossover(p1, p2):
+    """ This function performs a crossover on two given parent permutations (p1 and p2).
+        The crossover generates new permutations (children) by combining parts of the two existing parents.
+    """
+    # Select a random point for the crossover
     crossover_point = random.randint(0, len(p1))
     child1 = {}
     child2 = {}
+
+    # copy the perm up to the crossover point, from the parents to the children
     for i in range(crossover_point):
         key1, value1 = list(p1.items())[i]
         key2, value2 = list(p2.items())[i]
         child1[key1] = value1
         child2[key2] = value2
 
+    # copy the perm from to the crossover point until the end, from the parents to the children
+    # parents XX , YY will create children XY , YX
     for i in range(crossover_point, len(p1)):
         key1, value1 = list(p1.items())[i]
         key2, value2 = list(p2.items())[i]
         child1[key2] = value2
         child2[key1] = value1
+
+    # Ensure that each child is a valid permutation (no duplicate values)
     check_duplicates(child1)
     check_duplicates(child2)
     return child1, child2
 
 
 def check_duplicates(dictionary):
+    """
+    the function identifies duplicate values in the permutation dictionary,
+    and identifies the unused letters (the letters which don't appear in this permutation as values).
+    then it replaces each duplicate with a unique, unused letter.
+    """
+    # the values set holds the values that have already been seen
     values = set()
     duplicates = set()
     for value in dictionary.values():
@@ -130,6 +146,8 @@ def check_duplicates(dictionary):
     if duplicates:
         unused_letters = list(set(string.ascii_lowercase) - set(dictionary.values()))
         for key, value in dictionary.items():
+            if len(unused_letters) == 0:
+                break
             if value in duplicates:
                 dictionary[key] = get_unique_value(values, unused_letters)
 
@@ -138,6 +156,8 @@ def get_unique_value(values, unused_letters):
     while True:
         unique_value = random.choice(unused_letters)
         if unique_value not in values:
+            values.add(unique_value)  # Add the generated unique value to the set
+            unused_letters.remove(unique_value)
             return unique_value
 
 
@@ -183,8 +203,12 @@ def run_round(permutations):
     remaining_permutations = [permutations[i] for i in range(len(permutations)) if i not in top_scores_set]
     # implement crossover on the non-top remaining_permutations
     for _ in range((POPULATION_SIZE - num_top_scores) // 2):
-        parent1, parent2 = random.sample(remaining_permutations, 2)
-        child1, child2 = crossover(parent1, parent2)
+        # crossover between 2 non-top perms:
+        # parent1, parent2 = random.sample(remaining_permutations, 2)
+        # crossover between non-top and top perms:
+        parent1 = random.sample(remaining_permutations, 1)
+        parent2 = random.sample(top_permutations, 1)
+        child1, child2 = crossover(parent1[0], parent2[0])
         crossover_children.append(child1)
         crossover_children.append(child2)
 
