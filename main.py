@@ -265,6 +265,7 @@ def check_common_words_usage():
     return intersect_words
 
 
+
 if __name__ == '__main__':
     read_files()
     permutations = generate_permutations(POPULATION_SIZE)
