@@ -246,6 +246,11 @@ def run_round(permutations):
     next_round_perms = crossover_children + top_permutations
     return next_round_perms
 
+# TODO:
+# if for 10-15 rounds the perm stays the same - should act to avoid early convergence
+def check_early_convergence():
+    pass
+
 
 if __name__ == '__main__':
     read_files()
