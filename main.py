@@ -4,9 +4,9 @@ import string
 
 import heuristics
 
-ELITE_PERCENT = 0.2
-MUTATION_PERCENT = 0.1
-POPULATION_SIZE = 10
+ELITE_PERCENT = 0.1
+MUTATION_PERCENT = 0.05
+POPULATION_SIZE = 100
 # global variables
 common_words = set()
 known_letter_freqs = {}
@@ -127,7 +127,7 @@ def check_duplicates(dictionary):
         values.add(value)
 
     if duplicates:
-        unused_letters = list(set(string.ascii_uppercase) - set(dictionary.values()))
+        unused_letters = list(set(string.ascii_lowercase) - set(dictionary.values()))
         for key, value in dictionary.items():
             if value in duplicates:
                 dictionary[key] = get_unique_value(values, unused_letters)
