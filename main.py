@@ -175,6 +175,7 @@ def get_unique_value(values, unused_letters):
 def perform_mutation(permutation):
     """ the function performs mutation on the permutation dict.
     """
+    # TODO: should mutate more than 2 values
     keys = list(permutation.keys())
     # to avoid errors in case the permutation has less than two elements
     if len(keys) < 2:
