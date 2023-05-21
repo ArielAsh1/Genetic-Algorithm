@@ -182,7 +182,6 @@ def run_round(permutations):
     top_scores_set = set(top_scores_indices)
     remaining_permutations = [permutations[i] for i in range(len(permutations)) if i not in top_scores_set]
     # implement crossover on the non-top remaining_permutations
-    # TODO: fix...?
     for _ in range((POPULATION_SIZE - num_top_scores) // 2):
         parent1, parent2 = random.sample(remaining_permutations, 2)
         child1, child2 = crossover(parent1, parent2)
@@ -198,7 +197,7 @@ def run_round(permutations):
     # prints to keep track of the algorithm progress
     print("best fitness score: ", max(fitness_scores))
     print("it's index: ", fitness_scores.index(max(fitness_scores)))
-    # TODO: BUG - at some point the permutations stop changing (maybe something wrong with crossover)
+    # TODO: at some point the permutations stop changing
     print("it's permutation: ", permutations[fitness_scores.index(max(fitness_scores))])
     best_perm = permutations[fitness_scores.index(max(fitness_scores))]
     # create the deciphered file with the best perm we found
