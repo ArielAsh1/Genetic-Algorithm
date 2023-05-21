@@ -2,7 +2,7 @@ import collections
 import string
 
 COMMON_WORDS_SCORE = 10
-IMPORTANT_WORDS_SCORE = 20
+IMPORTANT_WORDS_SCORE = 25
 
 def get_letter_score(filename, known_letter_freqs):
     """ count the occurrences of each letter on our deciphered output text, and multiply that count with
@@ -55,7 +55,7 @@ def compute_perm_letter_freq(filename, known_letter_freqs):
     for letter in deciphered_file:
         if letter in letter_counter:
             letter_counter[letter] += 1
-    # Calculate total number of letters
+
     total_letters = sum(letter_counter.values())
     # Calculate frequencies and store them in dict
     perm_letter_freqs = {letter: count / total_letters for letter, count in letter_counter.items()}
@@ -112,10 +112,14 @@ def compare_pairs_freqs(pair_freqs, known_letter_pairs_freqs):
 
 
 def search_common_words(perm_deciphered_file, common_words):
-    # TODO: should iterate over words in output file, and search for words that appear in common_words
-    # TODO: test score for words match - not necessarily be 1.
+    """ The function iterates over words in the text of the created deciphered file,
+        and searches for matches with the words in the given common_words given.
+        it also tries to match some specified important words.
+        It assigns scores based on the frequency of these words.
+    """
     file_score = 0
     important_words = {"i", "a"}
+
     with open("output.txt", "r") as f:
         for line in perm_deciphered_file:
             words = line.split()
@@ -123,8 +127,10 @@ def search_common_words(perm_deciphered_file, common_words):
                 if word.isalpha():
                     # TODO: normalize score points
                     if word.lower() in common_words:
+                        # If the word is in common_words, increment the score with COMMON_WORDS_SCORE
                         file_score += COMMON_WORDS_SCORE
                     elif word.lower in important_words:
+                        # If the word is in important_words, increment the score with IMPORTANT_WORDS_SCORE
                         file_score += IMPORTANT_WORDS_SCORE
     return file_score
 

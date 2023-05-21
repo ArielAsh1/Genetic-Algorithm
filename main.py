@@ -4,11 +4,11 @@ import string
 
 import heuristics
 
-ELITE_PERCENT = 0.2
+ELITE_PERCENT = 0.1
 MUTATION_PERCENT = 0.1
 DROPTOUT_PERCENT = 0.2
 POPULATION_SIZE = 500
-
+ROUNDS = 100
 
 # global variables
 common_words = set()
@@ -29,6 +29,7 @@ def find_and_replace(permutation, input_file, output_file):
                 else:
                     converted_line += char
             file_out.write(converted_line)
+
 
 def read_files():
     # TODO: before submit check where the given files are located on the testers computers
@@ -131,46 +132,60 @@ def crossover(p1, p2):
     return child1, child2
 
 
-def check_duplicates(dictionary):
+def check_duplicates(perm):
     """
-    the function identifies duplicate values in the permutation dictionary,
+    this function ensures the uniqueness of the permutation values.
+    it identifies duplicate values in the permutation dictionary,
     and identifies the unused letters (the letters which don't appear in this permutation as values).
     then it replaces each duplicate with a unique, unused letter.
     """
-    # the values set holds the values that have already been seen
+    # the values set holds the values that have already been seen in this perm
     values = set()
     duplicates = set()
-    for value in dictionary.values():
+    # check if each value was seen before (a duplicate)
+    for value in perm.values():
         if value in values:
+            # if was seen before add it to duplicates
             duplicates.add(value)
         values.add(value)
 
+    # if there are duplicates, create a list of unused letters
     if duplicates:
-        unused_letters = list(set(string.ascii_lowercase) - set(dictionary.values()))
-        for key, value in dictionary.items():
+        unused_letters = list(set(string.ascii_lowercase) - set(perm.values()))
+        for key, value in perm.items():
             if len(unused_letters) == 0:
                 break
             if value in duplicates:
-                dictionary[key] = get_unique_value(values, unused_letters)
+                # replace duplicate value with a unique value
+                perm[key] = get_unique_value(values, unused_letters)
 
 
 def get_unique_value(values, unused_letters):
+    """
+    The function is used to fetch a unique value (an unused letter) from the list of unused letters.
+    the while loop continues until it finds a letter that is not already in the values set.
+    """
     while True:
         unique_value = random.choice(unused_letters)
         if unique_value not in values:
-            values.add(unique_value)  # Add the generated unique value to the set
+            # Add the generated unique value to the set, and remove it from possible unused_letters
+            values.add(unique_value)
             unused_letters.remove(unique_value)
             return unique_value
 
 
 def perform_mutation(permutation):
+    """ the function performs mutation on the permutation dict.
+    """
+    # TODO: should mutate more than 2 values
     keys = list(permutation.keys())
-    # TODO: necessary?
+    # to avoid errors in case the permutation has less than two elements
     if len(keys) < 2:
         return
     key1, key2 = random.sample(keys, 2)
     value1 = permutation[key1]
     value2 = permutation[key2]
+    # the mutation step, where two letters in the permutation are exchanged (swapping values)
     permutation[key1] = value2
     permutation[key2] = value1
 
@@ -203,8 +218,8 @@ def run_round(permutations):
     top_permutations = [permutations[index] for index in top_scores_indices]
 
     # extract the non-top permutations
-    top_scores_set = set(remaining_indices)
-    remaining_permutations = [permutations[i] for i in range(len(permutations)) if i in top_scores_set]
+    top_scores_set = set(top_scores_indices)
+    remaining_permutations = [permutations[i] for i in range(len(permutations)) if i not in top_scores_set]
     # implement crossover on the non-top remaining_permutations
     for _ in range((POPULATION_SIZE - num_top_scores) // 2):
         # crossover between 2 non-top perms:
@@ -212,6 +227,7 @@ def run_round(permutations):
         # crossover between non-top and top perms:
         parent1 = random.sample(remaining_permutations, 1)
         parent2 = random.sample(top_permutations, 1)
+
         child1, child2 = crossover(parent1[0], parent2[0])
         crossover_children.append(child1)
         crossover_children.append(child2)
@@ -235,6 +251,11 @@ def run_round(permutations):
     next_round_perms = crossover_children + top_permutations
     return next_round_perms
 
+# TODO:
+# if for 10-15 rounds the perm stays the same - should act to avoid early convergence
+def check_early_convergence():
+    pass
+
 
 def check_common_words_usage():
     global common_words
@@ -248,9 +269,7 @@ if __name__ == '__main__':
     read_files()
     permutations = generate_permutations(POPULATION_SIZE)
     # TODO: run loop that checks for convergence
-    for i in range(100):
+    for i in range(ROUNDS):
         print("Round: ", i + 1)
         permutations = run_round(permutations)
         print("Num of intersecting words: " + str(len(check_common_words_usage())))
-
-
