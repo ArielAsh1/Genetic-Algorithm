@@ -72,10 +72,11 @@ def get_fitness(perm_deciphered_file):
     perm_total_score -= pairs_freq_diff
 
     # increasing the score in response to how many common words were detected
-    words_score = heuristics.search_common_words(perm_deciphered_file, common_words)
+    words_score = heuristics.get_common_words_score(perm_deciphered_file, common_words)
     perm_total_score += words_score
 
     return perm_total_score
+    # return -letter_freq_diff * LETTER_WEIGHT -pairs_freq_diff * PAIR_WEGIHT + words_score * COMMON_WEIGHT
 
 
 def fitness_tal(perm_deciphered_file):
@@ -83,11 +84,18 @@ def fitness_tal(perm_deciphered_file):
         lower fitness score means bad, higher means good score.
     """
     global common_words, known_letter_freqs, known_letter_pairs_freqs
+    # TODO: problematic in the case where two letters have similar freq, how will it choose between them..? think if indeed a problem
 
     # get the scores
     letter_score = heuristics.get_letter_score(perm_deciphered_file, known_letter_freqs)
     pairs_score = heuristics.get_pair_score(perm_deciphered_file, known_letter_pairs_freqs)
-    return letter_score + pairs_score
+    words_score = heuristics.get_common_words_score(perm_deciphered_file, common_words)
+    return letter_score + pairs_score + words_score
+
+    # change to the following return line:
+    # regarding the COMMON_WEIGHT: we already multiply this inside the get_common_words_score func,
+    # so should we just return words_score as it is or multiply again with weight? and if again, with which WEIGHT?
+    return letter_score * LETTER_WEIGHT + pairs_score * PAIR_WEGIHT + words_score * COMMON_WEIGHT
 
 
 def generate_permutations(starting_population):
@@ -273,4 +281,4 @@ if __name__ == '__main__':
     for i in range(ROUNDS):
         print("Round: ", i + 1)
         permutations = run_round(permutations)
-        print("Num of intersecting words: " + str(len(check_common_words_usage())))
+        # print("Num of intersecting words: " + str(len(check_common_words_usage())))

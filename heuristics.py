@@ -111,21 +111,38 @@ def compare_pairs_freqs(pair_freqs, known_letter_pairs_freqs):
     return total_difference
 
 
-def search_common_words(perm_deciphered_file, common_words):
+def get_common_words_score(perm_deciphered_file, common_words):
     """ The function iterates over words in the text of the created deciphered file,
         and searches for matches with the words in the given common_words given.
         it also tries to match some specified important words.
         It assigns scores based on the frequency of these words.
     """
+    
+    # TODO- turn this pseudo to actual working code, which will replace the current code:
+    ######## start of pseudo
+    score = 0
+    common_words_found = 0
+    important_words_found = 0
+    output_word_count = 200
+    while reading words from output file:
+        word
+        if word is common:
+            common_words_found += 1
+        elif word is important:
+            important_words_found += 1
+    score = (common_words_found * COMMON_WEIGHT + important_words_found * IMPORTANT_WEIGHT) / output_word_count
+    return score
+    # (we want IMPORTANT_WEIGHT > COMMON_WEIGHT)
+    ######## end of pseudo
+    
+    #TODO: this code will be removed (but some of it is useful and can be copied for the new code above)
     file_score = 0
     important_words = {"i", "a"}
-
     with open("output.txt", "r") as f:
         for line in perm_deciphered_file:
             words = line.split()
             for word in words:
                 if word.isalpha():
-                    # TODO: normalize score points
                     if word.lower() in common_words:
                         # If the word is in common_words, increment the score with COMMON_WORDS_SCORE
                         file_score += COMMON_WORDS_SCORE
