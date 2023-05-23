@@ -119,21 +119,21 @@ def get_common_words_score(perm_deciphered_file, common_words):
     """
     
     # TODO- turn this pseudo to actual working code, which will replace the current code:
-    ######## start of pseudo
-    score = 0
-    common_words_found = 0
-    important_words_found = 0
-    output_word_count = 200
-    while reading words from output file:
-        word
-        if word is common:
-            common_words_found += 1
-        elif word is important:
-            important_words_found += 1
-    score = (common_words_found * COMMON_WEIGHT + important_words_found * IMPORTANT_WEIGHT) / output_word_count
-    return score
-    # (we want IMPORTANT_WEIGHT > COMMON_WEIGHT)
-    ######## end of pseudo
+    # ######## start of pseudo
+    # score = 0
+    # common_words_found = 0
+    # important_words_found = 0
+    # output_word_count = 200
+    # while reading words from output file:
+    #     word
+    #     if word is common:
+    #         common_words_found += 1
+    #     elif word is important:
+    #         important_words_found += 1
+    # score = (common_words_found * COMMON_WEIGHT + important_words_found * IMPORTANT_WEIGHT) / output_word_count
+    # return score
+    # # (we want IMPORTANT_WEIGHT > COMMON_WEIGHT)
+    # ######## end of pseudo
     
     #TODO: this code will be removed (but some of it is useful and can be copied for the new code above)
     file_score = 0

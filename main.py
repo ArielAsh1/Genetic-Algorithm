@@ -4,11 +4,14 @@ import string
 
 import heuristics
 
-ELITE_PERCENT = 0.1
-MUTATION_PERCENT = 0.1
-DROPTOUT_PERCENT = 0.2
-POPULATION_SIZE = 500
-ROUNDS = 100
+ELITE_PERCENT = 0.2
+MUTATION_PERCENT = 0.3
+DROPTOUT_PERCENT = 0.4
+POPULATION_SIZE = 400
+ROUNDS = 150
+TRUE_CODE = {'a': 'y', 'b': 'x', 'c': 'i', 'd': 'n', 'e': 't', 'f': 'o', 'g': 'z', 'h': 'j', 'i': 'c', 'j': 'e',
+            'k': 'b', 'l': 'l', 'm': 'd', 'n': 'u', 'o': 'k', 'p': 'm', 'q': 's', 'r': 'v', 's': 'p', 't': 'q',
+            'u': 'r', 'v': 'h', 'w': 'w', 'x': 'g', 'y': 'a', 'z': 'f'}
 
 # global variables
 common_words = set()
@@ -95,7 +98,7 @@ def fitness_tal(perm_deciphered_file):
     # change to the following return line:
     # regarding the COMMON_WEIGHT: we already multiply this inside the get_common_words_score func,
     # so should we just return words_score as it is or multiply again with weight? and if again, with which WEIGHT?
-    return letter_score * LETTER_WEIGHT + pairs_score * PAIR_WEGIHT + words_score * COMMON_WEIGHT
+    # return letter_score * LETTER_WEIGHT + pairs_score * PAIR_WEGIHT + words_score * COMMON_WEIGHT
 
 
 def generate_permutations(starting_population):
@@ -222,12 +225,14 @@ def run_round(permutations):
     num_dropout_scores = int(len(fitness_scores) * DROPTOUT_PERCENT)
     # Select these top ELITE_PERCENT of fitness scores and their corresponding permutations
     top_scores_indices = sorted_indices[:num_top_scores]
-    remaining_indices = sorted_indices[:-num_dropout_scores]
-    top_permutations = [permutations[index] for index in top_scores_indices]
-
-    # extract the non-top permutations
     top_scores_set = set(top_scores_indices)
-    remaining_permutations = [permutations[i] for i in range(len(permutations)) if i not in top_scores_set]
+    top_permutations = [permutations[index] for index in top_scores_set]
+
+    # extract the non-top permutations, excluding the dropout.
+    remaining_indices = sorted_indices[:-num_dropout_scores]
+    remaining_indices_set = set(remaining_indices) - top_scores_set
+    remaining_permutations = [permutations[i] for i in range(len(permutations)) if i in remaining_indices_set]
+
     # implement crossover on the non-top remaining_permutations
     for _ in range((POPULATION_SIZE - num_top_scores) // 2):
         # crossover between 2 non-top perms:
@@ -252,6 +257,7 @@ def run_round(permutations):
     # TODO: at some point the permutations stop changing
     print("it's permutation: ", permutations[fitness_scores.index(max(fitness_scores))])
     best_perm = permutations[fitness_scores.index(max(fitness_scores))]
+    print("Equal persent: " + str(compare_dictionaries(best_perm, TRUE_CODE)))
     # create the deciphered file with the best perm we found
     find_and_replace(best_perm, "enc.txt", "output.txt")
 
@@ -273,6 +279,15 @@ def check_common_words_usage():
     return intersect_words
 
 
+def compare_dictionaries(permuation, true_code):
+    matches = 0
+    for key in permuation:
+        if permuation[key] == true_code[key]:
+            matches += 1
+    total_pairs = len(permuation)
+    match_percentage = (matches / total_pairs) * 100
+    return match_percentage
+
 
 if __name__ == '__main__':
     read_files()
@@ -281,4 +296,3 @@ if __name__ == '__main__':
     for i in range(ROUNDS):
         print("Round: ", i + 1)
         permutations = run_round(permutations)
-        # print("Num of intersecting words: " + str(len(check_common_words_usage())))
