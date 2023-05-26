@@ -7,7 +7,8 @@ import heuristics
 ELITE_PERCENT = 0.2
 MUTATION_PERCENT = 0.3
 DROPTOUT_PERCENT = 0.4
-POPULATION_SIZE = 400
+POPULATION_SIZE = 150
+STUCK_THRESHOLD = 15
 ROUNDS = 150
 TRUE_CODE = {'a': 'y', 'b': 'x', 'c': 'i', 'd': 'n', 'e': 't', 'f': 'o', 'g': 'z', 'h': 'j', 'i': 'c', 'j': 'e',
             'k': 'b', 'l': 'l', 'm': 'd', 'n': 'u', 'o': 'k', 'p': 'm', 'q': 's', 'r': 'v', 's': 'p', 't': 'q',
@@ -17,6 +18,9 @@ TRUE_CODE = {'a': 'y', 'b': 'x', 'c': 'i', 'd': 'n', 'e': 't', 'f': 'o', 'g': 'z
 common_words = set()
 known_letter_freqs = {}
 known_letter_pairs_freqs = {}
+
+prev_best_fitness = 0
+round_first_seen_best_fitness = 0
 
 
 def find_and_replace(permutation, input_file, output_file):
@@ -201,82 +205,147 @@ def perform_mutation(permutation):
     permutation[key2] = value1
 
 
-def run_round(permutations):
+def run_round(permutations, curr_round):
     """ Defines a single generation in the genetic algorithm.
         Extracts the top percent of the permutations with the best fitness score to be used in the next round.
         The remaining permutations create children permutations by crossover, which will also be used in the next round.
         Together they make the new permutations list for the following round.
     """
-    fitness_scores = []
-    crossover_children = []
-    for perm in permutations:
-        find_and_replace(perm, "enc.txt", "output.txt")
-        # TODO: decide on fitness function
-        # fitness option 1:
-        # curr_perm_score = get_fitness("output.txt")
-        # fitness option 2:
-        curr_perm_score = fitness_tal("output.txt")
-        fitness_scores.append(curr_perm_score)
+    global prev_best_fitness, round_first_seen_best_fitness
 
-    # create a new indices DESC sorted list of the fitness scores, while fitness_scores maintains its original order.
-    sorted_indices = sorted(set(range(len(fitness_scores))), key=lambda x: fitness_scores[x], reverse=True)
-    # Calculate the number of the top scores that will be used in the next round
-    num_top_scores = int(len(fitness_scores) * ELITE_PERCENT)
-    num_dropout_scores = int(len(fitness_scores) * DROPTOUT_PERCENT)
-    # Select these top ELITE_PERCENT of fitness scores and their corresponding permutations
-    top_scores_indices = sorted_indices[:num_top_scores]
-    top_scores_set = set(top_scores_indices)
-    top_permutations = [permutations[index] for index in top_scores_set]
+    if is_converged(curr_round):
+        print("converged")
+        return -1
+    else:
+        fitness_scores = []
+        crossover_children = []
+        for perm in permutations:
+            find_and_replace(perm, "enc.txt", "output.txt")
+            # TODO: decide on fitness function
+            # fitness option 1:
+            # curr_perm_score = get_fitness("output.txt")
+            # fitness option 2:
+            curr_perm_score = round(fitness_tal("output.txt"), 5)
+            fitness_scores.append(curr_perm_score)
 
-    # extract the non-top permutations, excluding the dropout.
-    remaining_indices = sorted_indices[:-num_dropout_scores]
-    remaining_indices_set = set(remaining_indices) - top_scores_set
-    remaining_permutations = [permutations[i] for i in range(len(permutations)) if i in remaining_indices_set]
+        # create a new indices DESC sorted list of the fitness scores, while fitness_scores maintains its original order.
+        sorted_indices = sorted(set(range(len(fitness_scores))), key=lambda x: fitness_scores[x], reverse=True)
+        # Calculate the number of the top scores that will be used in the next round
+        num_top_scores = int(len(fitness_scores) * ELITE_PERCENT)
+        num_dropout_scores = int(len(fitness_scores) * DROPTOUT_PERCENT)
+        # Select these top ELITE_PERCENT of fitness scores and their corresponding permutations
+        top_scores_indices = sorted_indices[:num_top_scores]
+        top_scores_set = set(top_scores_indices)
+        top_permutations = [permutations[index] for index in top_scores_set]
 
-    # implement crossover on the non-top remaining_permutations
-    for _ in range((POPULATION_SIZE - num_top_scores) // 2):
-        # crossover between 2 non-top perms:
-        # parent1, parent2 = random.sample(remaining_permutations, 2)
-        # crossover between non-top and top perms:
-        parent1 = random.sample(remaining_permutations, 1)
-        parent2 = random.sample(top_permutations, 1)
+        # extract the non-top permutations, excluding the dropout.
+        remaining_indices = sorted_indices[:-num_dropout_scores]
+        remaining_indices_set = set(remaining_indices) - top_scores_set
+        remaining_permutations = [permutations[i] for i in range(len(permutations)) if i in remaining_indices_set]
 
-        child1, child2 = crossover(parent1[0], parent2[0])
-        crossover_children.append(child1)
-        crossover_children.append(child2)
+        # implement crossover on the non-top remaining_permutations
+        for _ in range((POPULATION_SIZE - num_top_scores) // 2):
+            # crossover between 2 non-top perms:
+            # parent1, parent2 = random.sample(remaining_permutations, 2)
+            # crossover between non-top and top perms:
+            parent1 = random.sample(remaining_permutations, 1)
+            parent2 = random.sample(top_permutations, 1)
 
-    # selecting a subset of the new crossover children for another mutation
-    for _ in range(int(len(crossover_children) * MUTATION_PERCENT)):
-        # Get a random permutation from the crossover children
-        random_perm = random.choice(crossover_children)
-        perform_mutation(random_perm)
+            child1, child2 = crossover(parent1[0], parent2[0])
+            crossover_children.append(child1)
+            crossover_children.append(child2)
 
-    # prints to keep track of the algorithm progress
-    print("best fitness score: ", max(fitness_scores))
-    print("it's index: ", fitness_scores.index(max(fitness_scores)))
-    # TODO: at some point the permutations stop changing
-    print("it's permutation: ", permutations[fitness_scores.index(max(fitness_scores))])
-    best_perm = permutations[fitness_scores.index(max(fitness_scores))]
-    print("Equal persent: " + str(compare_dictionaries(best_perm, TRUE_CODE)))
-    # create the deciphered file with the best perm we found
-    find_and_replace(best_perm, "enc.txt", "output.txt")
+        # selecting a subset of the new crossover children for another mutation
+        for _ in range(int(len(crossover_children) * MUTATION_PERCENT)):
+            # Get a random permutation from the crossover children
+            # TODO: mutate others as well/instead?
+            random_perm = random.choice(crossover_children)
+            perform_mutation(random_perm)
 
-    # add the top permutations to the crossover children and return as the next round permutations
-    next_round_perms = crossover_children + top_permutations
-    return next_round_perms
+        ### prints to keep track of the algorithm progress
+        curr_best_fitness = max(fitness_scores)
+        print("#######CURRENT ROUND BEST FITNESS SCORE: ", curr_best_fitness)
+        # print("it's index: ", fitness_scores.index(curr_best_fitness))
+        # TODO: at some point the permutations stop changing
+        print("it's permutation: ", permutations[fitness_scores.index(curr_best_fitness)])
+        best_perm = permutations[fitness_scores.index(curr_best_fitness)]
+        print("Equal percent: " + str(compare_dictionaries(best_perm, TRUE_CODE)))
+        # create the deciphered file with the best perm we found so far (THIS PART SHOULD STAY AFTER TESTS)
+        find_and_replace(best_perm, "enc.txt", "output.txt")
 
-# TODO:
-# if for 10-15 rounds the perm stays the same - should act to avoid early convergence
-def check_early_convergence():
-    pass
+        # add the top permutations to the crossover children and return as the next round permutations
+        next_round_perms = crossover_children + top_permutations
+
+        # check if fitness score is stuck
+        if is_stuck(curr_round, curr_best_fitness) < STUCK_THRESHOLD:
+            # if not stuck
+            if curr_best_fitness > prev_best_fitness:
+                # update fitness global variables if improved #### TODO: should be if worsen as well???
+                prev_best_fitness = curr_best_fitness
+                round_first_seen_best_fitness = curr_round
+            return next_round_perms
+        else:
+            # stuck, early convergence
+            print("stuck- fitness hasn't changed for:", STUCK_THRESHOLD, " rounds")
+            return -1
+
+
+def is_stuck(curr_round, curr_best_fitness):
+    """ checks for early convergence-
+        checks if the fitness score is stuck and stays the same for STUCK_THRESHOLD rounds.
+    """
+    global prev_best_fitness, round_first_seen_best_fitness
+
+    if curr_best_fitness == prev_best_fitness:
+        # if fitness stays the same, compute the rounds diff from the first time we saw this fitness
+        rounds_diff = curr_round - round_first_seen_best_fitness
+        return rounds_diff
+    else:
+        # fitness improved/worsen, return 0 which will simply mean "not stuck"
+        return 0
+
+
+def is_converged(curr_round):
+    """ this function checks two scenarios:
+        1. reached max rounds
+        2. all words in our output are in the given dict
+    """
+    if curr_round == ROUNDS:
+        # reached max rounds
+        print("reached max rounds")
+        return True
+    elif check_common_words_usage() == 100:
+        # all words in our output are in the given dict
+        print("all output words are in dict")
+        return True
+    else:
+        return False
 
 
 def check_common_words_usage():
+    """ calculates and returns the percentage of common words that appear in this permutation output file.
+    """
     global common_words
+    # with open('output.txt', 'r') as f:
+    #     output_words = set(line.strip() for line in f)
+    # intersect_words_count = len(common_words) - len(common_words - output_words)
+
+    output_words = set()
     with open('output.txt', 'r') as f:
-        output_words = set(line.strip() for line in f)
-    intersect_words = len(common_words) - len(common_words - output_words)
-    return intersect_words
+        for line in f:
+            output_words.update(word.lower() for word in line.strip().split())
+        intersect_words_count = len(common_words.intersection(output_words))
+
+    # Calculate the percentage of intersecting words
+    if output_words:
+        intersect_percentage = (intersect_words_count / len(output_words)) * 100
+        intersect_percentage = round(intersect_percentage, 4)
+
+    else:
+        # if the output_words set is empty
+        intersect_percentage = 0
+    print("intersect_percentage: ", intersect_percentage)
+    return intersect_percentage
 
 
 def compare_dictionaries(permuation, true_code):
@@ -295,4 +364,4 @@ if __name__ == '__main__':
     # TODO: run loop that checks for convergence
     for i in range(ROUNDS):
         print("Round: ", i + 1)
-        permutations = run_round(permutations)
+        permutations = run_round(permutations, i)
