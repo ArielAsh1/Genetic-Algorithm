@@ -7,6 +7,7 @@ from main import COMMON_WEIGHT, IMPORTANT_WEIGHT
 COMMON_WORDS_SCORE = 10
 IMPORTANT_WORDS_SCORE = 25
 
+
 def get_letter_score(filename, known_letter_freqs):
     """ count the occurrences of each letter on our deciphered output text, and multiply that count with
         the known frequency of that letter, which is given in the "Letter_Freq" file.
@@ -26,6 +27,7 @@ def get_letter_score(filename, known_letter_freqs):
     total_score = sum(letter_scores.values())
     return total_score
 
+
 def get_pair_score(filename, known_letter_pairs_freqs):
     """ count the occurrences of each pair of letters on our deciphered output text, and multiply that count with
         the known frequency of that pair, which is given in the "Letter_Freq2" file.
@@ -41,10 +43,11 @@ def get_pair_score(filename, known_letter_pairs_freqs):
             pair_counter[pair] += 1
 
     # Multiply the count of each pair by the known frequency of that pair
-    pair_scores = {pair: count * known_letter_pairs_freqs[pair] for pair,count in pair_counter.items()}
+    pair_scores = {pair: count * known_letter_pairs_freqs[pair] for pair, count in pair_counter.items()}
     # Sum up the scores to get the total score
     total_score = sum(pair_scores.values())
-    return total_score
+    return total_score * 10
+
 
 def compute_perm_letter_freq(filename, known_letter_freqs):
     """ for each permutation, compute the frequencies of each letter on our deciphered output text,

@@ -3,6 +3,7 @@ import string
 
 import heuristics
 
+INPUT_ENC = "test2enc.txt"
 ELITE_PERCENT = 0.2
 MUTATION_PERCENT = 0.3
 DROPTOUT_PERCENT = 0.4
@@ -223,7 +224,7 @@ def run_round(permutations, curr_round):
         fitness_scores = []
         crossover_children = []
         for perm in permutations:
-            find_and_replace(perm, "enc.txt", "output.txt")
+            find_and_replace(perm, INPUT_ENC, "output.txt")
             # TODO: decide on fitness function
             # fitness option 1:
             # curr_perm_score = get_fitness("output.txt")
@@ -274,7 +275,7 @@ def run_round(permutations, curr_round):
         best_perm = permutations[fitness_scores.index(curr_best_fitness)]
         print("Equal percent: " + str(compare_dictionaries(best_perm, TRUE_CODE)))
         # create the deciphered file with the best perm we found so far (THIS PART SHOULD STAY AFTER TESTS)
-        find_and_replace(best_perm, "enc.txt", "output.txt")
+        find_and_replace(best_perm, INPUT_ENC, "output.txt")
 
         # add the top permutations to the crossover children and return as the next round permutations
         next_round_perms = crossover_children + top_permutations
