@@ -46,7 +46,7 @@ def get_pair_score(filename, known_letter_pairs_freqs):
     pair_scores = {pair: count * known_letter_pairs_freqs[pair] for pair, count in pair_counter.items()}
     # Sum up the scores to get the total score
     total_score = sum(pair_scores.values())
-    return total_score * 10
+    return total_score
 
 
 def compute_perm_letter_freq(filename, known_letter_freqs):
@@ -156,22 +156,22 @@ def get_common_words_score(perm_deciphered_file, common_words):
                     elif word.lower in important_words:
                         important_words_found += 1
         # Calculate the score (and avoid division by zero)
-        if output_word_count != 0:
-            perm_words_score = (common_words_found * COMMON_WEIGHT +
-                                important_words_found * IMPORTANT_WEIGHT) / output_word_count
-        return perm_words_score
+    if output_word_count != 0:
+        perm_words_score = (common_words_found * COMMON_WEIGHT +
+                            important_words_found * IMPORTANT_WEIGHT) / output_word_count
+    return perm_words_score
 
 
 # new combined func
 def get_common_words_info(perm_deciphered_file, common_words):
     """
-    This single function will calculate both the common words score and the intersect percentage.
+    calculates both the common words score and the intersect percentage.
      By using the set output_words to keep track of unique words in the file,
      it can calculate the intersection with common_words.
       This method also prevents having to open and read the file twice.
       The function now returns two values - perm_words_score and intersect_percentage.
 
-     Analyzes the content of a given file and calculates two metrics:
+     Analyzes the content of the given file and calculates two metrics:
     1. perm_words_score: a score based on the frequency of common and important words in the file,
      normalized by total word count.
     2. intersect_percentage: the percentage of unique words in the file that intersect with a given set of common words.
