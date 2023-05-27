@@ -5,6 +5,7 @@ import sys
 import heuristics
 
 INPUT_ENC = "test2enc.txt"
+OUTPUT_FILE = "plain.txt"
 ELITE_PERCENT = 0.2
 MUTATION_PERCENT = 0.3
 DROPTOUT_PERCENT = 0.4
@@ -87,6 +88,7 @@ known_letter_pairs_freqs = {}
 
 prev_best_fitness = -1000
 round_first_seen_best_fitness = -1000
+total_fitness_calls = 0
 
 
 def find_and_replace(permutation, input_file, output_file):
@@ -131,7 +133,8 @@ def get_fitness(perm_deciphered_file):
     """ return this current perm fitness result.
         lower fitness score means bad, higher means good score.
     """
-    global common_words, known_letter_freqs, known_letter_pairs_freqs
+    global common_words, known_letter_freqs, known_letter_pairs_freqs, total_fitness_calls
+    total_fitness_calls += 1
     perm_total_score = 0
     # decreasing the absolut diff of the letter frequencies from the score
     # the closer the current perm letter frequency to the known letter frequency, less score will be decreased
@@ -267,6 +270,10 @@ def perform_mutation(permutation):
     permutation[key1] = value2
     permutation[key2] = value1
 
+def write_solution(best_perm):
+    with open('perm.txt', 'w') as file:
+        for key, value in best_perm.items():
+            file.write(f'{key} {value}\n')
 
 def run_round(permutations, curr_round):
     """ Defines a single generation in the genetic algorithm.
@@ -278,10 +285,10 @@ def run_round(permutations, curr_round):
     fitness_scores = []
     crossover_children = []
     for perm in permutations:
-        find_and_replace(perm, INPUT_ENC, "output.txt")
+        find_and_replace(perm, INPUT_ENC, OUTPUT_FILE)
         # TODO: decide on fitness function
         # fitness option 1:
-        curr_perm_score = round(get_fitness("output.txt"), 5)
+        curr_perm_score = round(get_fitness(OUTPUT_FILE), 5)
         # fitness option 2:
         # curr_perm_score = round(fitness_tal("output.txt"), 5)
         fitness_scores.append(curr_perm_score)
@@ -328,7 +335,7 @@ def run_round(permutations, curr_round):
     # print("it's permutation: ", best_perm)
     print("Equal percent: " + str(compare_dictionaries(best_perm, TRUE_CODE)))
     # create the deciphered file with the best perm we found so far (THIS PART SHOULD STAY AFTER TESTS)
-    find_and_replace(best_perm, INPUT_ENC, "output.txt")
+    find_and_replace(best_perm, INPUT_ENC, OUTPUT_FILE)
 
     # add the top permutations to the crossover children and return as the next round permutations
     next_round_perms = crossover_children + top_permutations
@@ -336,9 +343,11 @@ def run_round(permutations, curr_round):
     # convergence checks:
     if is_max_round(curr_round):
         print("Reached max rounds")
+        write_solution(best_perm)
         sys.exit()
-    elif intersection_percent_with_common_words("output.txt") == 100:
+    elif intersection_percent_with_common_words(OUTPUT_FILE) == 100:
         print("CONVERGED, all deciphered output words are in common words")
+        write_solution(best_perm)
         sys.exit()
     # check if fitness score is stuck
     elif is_stuck(curr_round, curr_best_fitness) < STUCK_THRESHOLD:
@@ -351,6 +360,7 @@ def run_round(permutations, curr_round):
     else:
         # stuck, early convergence
         print("Stuck - fitness hasn't changed for:", STUCK_THRESHOLD, " rounds")
+        write_solution(best_perm)
         sys.exit()
 
 
