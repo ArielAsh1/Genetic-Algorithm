@@ -1,4 +1,3 @@
-
 import random
 import string
 
@@ -7,8 +6,12 @@ import heuristics
 ELITE_PERCENT = 0.2
 MUTATION_PERCENT = 0.3
 DROPTOUT_PERCENT = 0.4
-POPULATION_SIZE = 150
-STUCK_THRESHOLD = 15
+POPULATION_SIZE = 500
+STUCK_THRESHOLD = 20
+COMMON_WEIGHT = 1.5
+IMPORTANT_WEIGHT = 2
+LETTER_WEIGHT = 5
+PAIR_WEIGHT = 10
 ROUNDS = 150
 TRUE_CODE = {'a': 'y', 'b': 'x', 'c': 'i', 'd': 'n', 'e': 't', 'f': 'o', 'g': 'z', 'h': 'j', 'i': 'c', 'j': 'e',
             'k': 'b', 'l': 'l', 'm': 'd', 'n': 'u', 'o': 'k', 'p': 'm', 'q': 's', 'r': 'v', 's': 'p', 't': 'q',
@@ -322,15 +325,14 @@ def is_converged(curr_round):
         return False
 
 
+# intersection func
 def check_common_words_usage():
     """ calculates and returns the percentage of common words that appear in this permutation output file.
     """
     global common_words
-    # with open('output.txt', 'r') as f:
-    #     output_words = set(line.strip() for line in f)
-    # intersect_words_count = len(common_words) - len(common_words - output_words)
-
     output_words = set()
+    intersect_percentage = 0
+
     with open('output.txt', 'r') as f:
         for line in f:
             output_words.update(word.lower() for word in line.strip().split())
@@ -341,21 +343,19 @@ def check_common_words_usage():
         intersect_percentage = (intersect_words_count / len(output_words)) * 100
         intersect_percentage = round(intersect_percentage, 4)
 
-    else:
-        # if the output_words set is empty
-        intersect_percentage = 0
     print("intersect_percentage: ", intersect_percentage)
     return intersect_percentage
 
 
-def compare_dictionaries(permuation, true_code):
+# helper function FOR TESTS ONLY, true_perm will not be accessible in the real world
+def compare_dictionaries(curr_perm, true_perm):
     matches = 0
-    for key in permuation:
-        if permuation[key] == true_code[key]:
+    for key in curr_perm:
+        if curr_perm[key] == true_perm[key]:
             matches += 1
-    total_pairs = len(permuation)
+    total_pairs = len(curr_perm)
     match_percentage = (matches / total_pairs) * 100
-    return match_percentage
+    return match_percentage, f"{matches}/{total_pairs}"
 
 
 if __name__ == '__main__':

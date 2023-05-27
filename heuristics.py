@@ -1,6 +1,9 @@
 import collections
 import string
 
+from main import COMMON_WEIGHT, IMPORTANT_WEIGHT
+
+# TODO: remove as well
 COMMON_WORDS_SCORE = 10
 IMPORTANT_WORDS_SCORE = 25
 
@@ -112,44 +115,105 @@ def compare_pairs_freqs(pair_freqs, known_letter_pairs_freqs):
 
 
 def get_common_words_score(perm_deciphered_file, common_words):
-    """ The function iterates over words in the text of the created deciphered file,
-        and searches for matches with the words in the given common_words given.
+    """ iterates over the words in the deciphered output text file of current perm,
+        and searches for matches with the words in the given common_words.
         it also tries to match some specified important words.
-        It assigns scores based on the frequency of these words.
+        It then assigns specific scores based on the frequency of these words.
     """
-    
-    # TODO- turn this pseudo to actual working code, which will replace the current code:
-    # ######## start of pseudo
-    # score = 0
-    # common_words_found = 0
-    # important_words_found = 0
-    # output_word_count = 200
-    # while reading words from output file:
-    #     word
-    #     if word is common:
-    #         common_words_found += 1
-    #     elif word is important:
-    #         important_words_found += 1
-    # score = (common_words_found * COMMON_WEIGHT + important_words_found * IMPORTANT_WEIGHT) / output_word_count
-    # return score
-    # # (we want IMPORTANT_WEIGHT > COMMON_WEIGHT)
-    # ######## end of pseudo
-    
-    #TODO: this code will be removed (but some of it is useful and can be copied for the new code above)
-    file_score = 0
+    # TODO: this code will be removed
+    # file_score = 0
+    # important_words = {"i", "a"}
+    # with open(perm_deciphered_file, "r") as deciphered_file:
+    #     for line in deciphered_file:
+    #         words = line.split()
+    #         for word in words:
+    #             if word.isalpha():
+    #                 if word.lower() in common_words:
+    #                     # If the word is in common_words, increment the score with COMMON_WORDS_SCORE
+    #                     file_score += COMMON_WORDS_SCORE
+    #                 elif word.lower in important_words:
+    #                     # If the word is in important_words, increment the score with IMPORTANT_WORDS_SCORE
+    #                     file_score += IMPORTANT_WORDS_SCORE
+    # return file_score
+
+    perm_words_score = 0
+    common_words_found = 0
+    important_words_found = 0
+    output_word_count = 0
     important_words = {"i", "a"}
-    with open("output.txt", "r") as f:
-        for line in perm_deciphered_file:
+
+    with open(perm_deciphered_file, "r") as deciphered_file:
+        for line in deciphered_file:
             words = line.split()
+            output_word_count += len(words)
             for word in words:
                 if word.isalpha():
                     if word.lower() in common_words:
-                        # If the word is in common_words, increment the score with COMMON_WORDS_SCORE
-                        file_score += COMMON_WORDS_SCORE
+                        common_words_found += 1
                     elif word.lower in important_words:
-                        # If the word is in important_words, increment the score with IMPORTANT_WORDS_SCORE
-                        file_score += IMPORTANT_WORDS_SCORE
-    return file_score
+                        important_words_found += 1
+        # Calculate the score (and avoid division by zero)
+        if output_word_count != 0:
+            perm_words_score = (common_words_found * COMMON_WEIGHT +
+                                important_words_found * IMPORTANT_WEIGHT) / output_word_count
+        return perm_words_score
+
+
+# new combined func
+def get_common_words_info(perm_deciphered_file, common_words):
+    """
+    This single function will calculate both the common words score and the intersect percentage.
+     By using the set output_words to keep track of unique words in the file,
+     it can calculate the intersection with common_words.
+      This method also prevents having to open and read the file twice.
+      The function now returns two values - perm_words_score and intersect_percentage.
+
+     Analyzes the content of a given file and calculates two metrics:
+    1. perm_words_score: a score based on the frequency of common and important words in the file,
+     normalized by total word count.
+    2. intersect_percentage: the percentage of unique words in the file that intersect with a given set of common words.
+    Args: perm_deciphered_file (str): The name of the file to analyze.
+        common_words (set): A set of common words to check against.
+    Returns: tuple: perm_words_score (float) and intersect_percentage (float)
+    """
+    # variables for calculating score
+    perm_words_score = 0
+    common_words_found = 0
+    important_words_found = 0
+    output_word_count = 0
+    important_words = {"i", "a"}
+    # variables for calculating intersection
+    intersect_percentage = 0
+    output_words = set()
+
+    with open(perm_deciphered_file, "r") as deciphered_file:
+        for line in deciphered_file:
+            words = line.split()
+            output_word_count += len(words)
+            for word in words:
+                if word.isalpha():
+                    word_lower = word.lower()
+                    output_words.add(word_lower)
+                    if word_lower in common_words:
+                        common_words_found += 1
+                    elif word_lower in important_words:
+                        important_words_found += 1
+
+        # compute the final score
+        if output_word_count != 0:
+            perm_words_score = (common_words_found * COMMON_WEIGHT +
+                                important_words_found * IMPORTANT_WEIGHT) / output_word_count
+
+        # get the intersection percentage
+        intersect_words_count = len(common_words.intersection(output_words))
+        if output_words:
+            # Calculate the percentage of intersecting words
+            intersect_percentage = (intersect_words_count / len(output_words)) * 100
+            intersect_percentage = round(intersect_percentage, 4)
+
+    print("intersect_percentage: ", intersect_percentage)
+    return perm_words_score, intersect_percentage
+
 
 
 # if __name__ == '__main__':
