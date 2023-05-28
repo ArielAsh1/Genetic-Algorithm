@@ -1,17 +1,20 @@
 import random
 import string
 import sys
-
+import copy
+import statistics
+import matplotlib.pyplot as plt
+import numpy as np
 import heuristics
 
-INPUT_ENC = "test2enc.txt"
+INPUT_ENC = "enc.txt"
 OUTPUT_FILE = "plain.txt"
 ELITE_PERCENT = 0.2
 MUTATION_PERCENT = 0.3
 DROPTOUT_PERCENT = 0.4
-POPULATION_SIZE = 150
+POPULATION_SIZE = 10
 STUCK_THRESHOLD = 15
-ROUNDS = 150
+ROUNDS = 10
 
 COMMON_WEIGHT = 1.5
 IMPORTANT_WEIGHT = 2.5
@@ -20,9 +23,9 @@ PAIR_WEIGHT = 10
 WORDS_WEIGHT = 5
 
 # test1
-# TRUE_CODE = {'a': 'y', 'b': 'x', 'c': 'i', 'd': 'n', 'e': 't', 'f': 'o', 'g': 'z', 'h': 'j', 'i': 'c', 'j': 'e',
-#             'k': 'b', 'l': 'l', 'm': 'd', 'n': 'u', 'o': 'k', 'p': 'm', 'q': 's', 'r': 'v', 's': 'p', 't': 'q',
-#             'u': 'r', 'v': 'h', 'w': 'w', 'x': 'g', 'y': 'a', 'z': 'f'}
+TRUE_CODE = {'a': 'y', 'b': 'x', 'c': 'i', 'd': 'n', 'e': 't', 'f': 'o', 'g': 'z', 'h': 'j', 'i': 'c', 'j': 'e',
+            'k': 'b', 'l': 'l', 'm': 'd', 'n': 'u', 'o': 'k', 'p': 'm', 'q': 's', 'r': 'v', 's': 'p', 't': 'q',
+            'u': 'r', 'v': 'h', 'w': 'w', 'x': 'g', 'y': 'a', 'z': 'f'}
 #test2
 # TRUE_CODE = {
 #     'a': 'q',
@@ -53,39 +56,39 @@ WORDS_WEIGHT = 5
 #     'z': 'm'
 # }
 # test3
-TRUE_CODE = {
-    'a': 'q',
-    'b': 'w',
-    'c': 'e',
-    'd': 'r',
-    'e': 't',
-    'f': 'y',
-    'g': 'u',
-    'h': 'i',
-    'i': 'o',
-    'j': 'p',
-    'k': 'a',
-    'l': 's',
-    'm': 'd',
-    'n': 'f',
-    'o': 'g',
-    'p': 'h',
-    'q': 'j',
-    'r': 'k',
-    's': 'l',
-    't': 'z',
-    'u': 'x',
-    'v': 'c',
-    'w': 'v',
-    'x': 'b',
-    'y': 'n',
-    'z': 'm'}
+# TRUE_CODE = {
+#     'a': 'q',
+#     'b': 'w',
+#     'c': 'e',
+#     'd': 'r',
+#     'e': 't',
+#     'f': 'y',
+#     'g': 'u',
+#     'h': 'i',
+#     'i': 'o',
+#     'j': 'p',
+#     'k': 'a',
+#     'l': 's',
+#     'm': 'd',
+#     'n': 'f',
+#     'o': 'g',
+#     'p': 'h',
+#     'q': 'j',
+#     'r': 'k',
+#     's': 'l',
+#     't': 'z',
+#     'u': 'x',
+#     'v': 'c',
+#     'w': 'v',
+#     'x': 'b',
+#     'y': 'n',
+#     'z': 'm'}
 
 # global variables
 common_words = set()
 known_letter_freqs = {}
 known_letter_pairs_freqs = {}
-
+stats_list = []     # will hold tuples with (best, avg, worst) fintess scores of each round,
 prev_best_fitness = -1000
 round_first_seen_best_fitness = -1000
 total_fitness_calls = 0
@@ -271,9 +274,16 @@ def perform_mutation(permutation):
     permutation[key2] = value1
 
 def write_solution(best_perm):
+    print(f"Total number of calls for fitness function is: {total_fitness_calls}")
     with open('perm.txt', 'w') as file:
         for key, value in best_perm.items():
             file.write(f'{key} {value}\n')
+
+
+def before_exit():
+    # todo: should plot from here
+    exit()
+
 
 def run_round(permutations, curr_round):
     """ Defines a single generation in the genetic algorithm.
@@ -281,7 +291,7 @@ def run_round(permutations, curr_round):
         The remaining permutations create children permutations by crossover, which will also be used in the next round.
         Together they make the new permutations list for the following round.
     """
-    global prev_best_fitness, round_first_seen_best_fitness
+    global prev_best_fitness, round_first_seen_best_fitness, stats_list
     fitness_scores = []
     crossover_children = []
     for perm in permutations:
@@ -329,6 +339,9 @@ def run_round(permutations, curr_round):
 
     ### prints to keep track of the algorithm progress
     curr_best_fitness = max(fitness_scores)
+    curr_worst_fitness = min(fitness_scores)
+    curr_avg_fitness = statistics.mean(fitness_scores)
+    stats_list.append((curr_best_fitness, curr_avg_fitness, curr_worst_fitness))
     print("####### CURRENT ROUND BEST FITNESS SCORE: ", curr_best_fitness)
     # print("it's index: ", fitness_scores.index(curr_best_fitness))
     best_perm = permutations[fitness_scores.index(curr_best_fitness)]
@@ -339,6 +352,127 @@ def run_round(permutations, curr_round):
 
     # add the top permutations to the crossover children and return as the next round permutations
     next_round_perms = crossover_children + top_permutations
+
+    # convergence checks:
+    if is_max_round(curr_round):
+        print("Reached max rounds")
+        write_solution(best_perm)
+        before_exit()
+        # sys.exit()
+    elif intersection_percent_with_common_words(OUTPUT_FILE) == 100:
+        print("CONVERGED, all deciphered output words are in common words")
+        write_solution(best_perm)
+        before_exit()
+        # sys.exit()
+    # check if fitness score is stuck
+    elif is_stuck(curr_round, curr_best_fitness) < STUCK_THRESHOLD:
+        # if not stuck
+        if curr_best_fitness > prev_best_fitness:
+            # update fitness global variables if improved #### TODO: should be if worsen as well???
+            prev_best_fitness = curr_best_fitness
+            round_first_seen_best_fitness = curr_round
+        return next_round_perms
+    else:
+        # stuck, early convergence
+        print("Stuck - fitness hasn't changed for:", STUCK_THRESHOLD, " rounds")
+        write_solution(best_perm)
+        before_exit()
+        # sys.exit()
+
+
+def check_local_optimum(permutation, old_fitness, N, typeFlag):
+    """
+    Function is responsible to run local optimum for Part B of the exercise.
+    It performs a number (N) of mutations for input permutation, and than, according to the type of the run,
+    returns the new/old permutation and its current fitness score.
+    :param permutation: a permutation, which is a cnadidate for solution.
+    :param old_fitness: the current fitness score of permutation.
+    :param N: the number of mutations to perform on each permutation.
+    :param typeFlag: 0 for darwin, 1 for lamarckian
+    :return: if darwian - the old permutations and its new fitness score.
+             if lamarckian - the new permutation and its new fitness score.
+    """
+    find_and_replace(permutation, INPUT_ENC, OUTPUT_FILE)
+    old_fitness_score = round(get_fitness(OUTPUT_FILE), 5)
+
+    new_permutation = copy.deepcopy(permutation)
+    for i in range(N):
+        perform_mutation(new_permutation)
+    find_and_replace(new_permutation, INPUT_ENC, OUTPUT_FILE)
+    new_fitness_score = round(get_fitness(OUTPUT_FILE), 5)
+    if new_fitness_score > old_fitness_score:
+        if typeFlag == 0:
+            # darwian
+            return permutation, new_fitness_score
+        elif typeFlag == 1:
+            # lamarckian
+            return new_permutation, new_fitness_score
+    else:
+        return permutation, old_fitness_score
+
+
+def run_round_darwin(permutations, curr_round, N, fitness_scores, typeFlag):
+    global prev_best_fitness, round_first_seen_best_fitness
+    crossover_children = []
+    if curr_round == 0:
+        # first round - should calculate fitness scores
+        for perm in permutations:
+            find_and_replace(perm, INPUT_ENC, OUTPUT_FILE)
+            curr_perm_score = round(get_fitness(OUTPUT_FILE), 5)
+            fitness_scores.append(curr_perm_score)
+
+    # create a new indices DESC sorted list of the fitness scores, while fitness_scores maintains its original order.
+    sorted_indices = sorted(set(range(len(fitness_scores))), key=lambda x: fitness_scores[x], reverse=True)
+    # Calculate the number of the top scores that will be used in the next round
+    num_top_scores = int(len(fitness_scores) * ELITE_PERCENT)
+    num_dropout_scores = int(len(fitness_scores) * DROPTOUT_PERCENT)
+    # Select these top ELITE_PERCENT of fitness scores and their corresponding permutations
+    top_scores_indices = sorted_indices[:num_top_scores]
+    top_scores_set = set(top_scores_indices)
+    top_permutations = [permutations[index] for index in top_scores_set]
+
+    # extract the non-top permutations, excluding the dropout.
+    remaining_indices = sorted_indices[:-num_dropout_scores]
+    remaining_indices_set = set(remaining_indices) - top_scores_set
+    remaining_permutations = [permutations[i] for i in range(len(permutations)) if i in remaining_indices_set]
+
+    # implement crossover on the non-top remaining_permutations
+    for _ in range((POPULATION_SIZE - num_top_scores) // 2):
+        parent1 = random.sample(remaining_permutations, 1)
+        parent2 = random.sample(top_permutations, 1)
+        child1, child2 = crossover(parent1[0], parent2[0])
+        crossover_children.append(child1)
+        crossover_children.append(child2)
+
+    # selecting a subset of the new crossover children for another mutation
+    for _ in range(int(len(crossover_children) * MUTATION_PERCENT)):
+        # Get a random permutation from the crossover children
+        random_perm = random.choice(crossover_children)
+        perform_mutation(random_perm)
+
+    joined_perms = top_permutations + crossover_children
+    next_round_perms = []
+    next_round_fitness = []
+    for i in range(len(joined_perms)):
+        perm = joined_perms[i]
+        find_and_replace(perm, INPUT_ENC, OUTPUT_FILE)
+        curr_fitness = round(get_fitness(OUTPUT_FILE), 5)
+        # curr_fitness = fitness_scores[i]
+        new_perm, new_fitness = check_local_optimum(perm, curr_fitness, N, typeFlag)
+        next_round_perms.append(new_perm)
+        next_round_fitness.append(new_fitness)
+
+
+    ### prints to keep track of the algorithm progress
+    curr_best_fitness = max(next_round_fitness)
+    print("####### CURRENT ROUND BEST FITNESS SCORE: ", curr_best_fitness)
+    # print("it's index: ", fitness_scores.index(curr_best_fitness))
+    best_perm = next_round_perms[next_round_fitness.index(curr_best_fitness)]
+    # print("it's permutation: ", best_perm)
+    print("Equal percent: " + str(compare_dictionaries(best_perm, TRUE_CODE)))
+    # create the deciphered file with the best perm we found so far (THIS PART SHOULD STAY AFTER TESTS)
+    find_and_replace(best_perm, INPUT_ENC, OUTPUT_FILE)
+    # add the top permutations to the crossover children and return as the next round permutations
 
     # convergence checks:
     if is_max_round(curr_round):
@@ -356,13 +490,24 @@ def run_round(permutations, curr_round):
             # update fitness global variables if improved #### TODO: should be if worsen as well???
             prev_best_fitness = curr_best_fitness
             round_first_seen_best_fitness = curr_round
-        return next_round_perms
+        return next_round_perms, next_round_fitness
     else:
         # stuck, early convergence
         print("Stuck - fitness hasn't changed for:", STUCK_THRESHOLD, " rounds")
         write_solution(best_perm)
         sys.exit()
 
+
+def main_PartB():
+    read_files()
+    permutations = generate_permutations(POPULATION_SIZE)
+    fitness_scores = []
+    N = 5
+    # 0 - darwian, 1 - lamarckian
+    typeFlag = 0
+    for i in range(ROUNDS):
+        print("Round: ", i + 1)
+        permutations, fitness_scores = run_round_darwin(permutations, i, N, fitness_scores, typeFlag)
 
 def is_stuck(curr_round, curr_best_fitness):
     """ checks for early convergence-
@@ -425,6 +570,7 @@ def compare_dictionaries(curr_perm, true_perm):
 
 
 if __name__ == '__main__':
+    # main_PartB()
     read_files()
     permutations = generate_permutations(POPULATION_SIZE)
     for i in range(ROUNDS):
