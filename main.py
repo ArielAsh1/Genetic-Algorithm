@@ -11,13 +11,11 @@ INPUT_ENC = "enc.txt"
 OUTPUT_FILE = "plain.txt"
 ELITE_PERCENT = 0.2
 MUTATION_PERCENT = 0.3
-DROPTOUT_PERCENT = 0.4
-POPULATION_SIZE = 10
+DROPOUT_PERCENT = 0.4
+POPULATION_SIZE = 300
 STUCK_THRESHOLD = 15
 ROUNDS = 10
 
-COMMON_WEIGHT = 1.5
-IMPORTANT_WEIGHT = 2.5
 LETTER_WEIGHT = 1
 PAIR_WEIGHT = 10
 WORDS_WEIGHT = 5
@@ -132,29 +130,27 @@ def read_files():
                     break
 
 
+# TODO: update documentation and comments
 def get_fitness(perm_deciphered_file):
     """ return this current perm fitness result.
         lower fitness score means bad, higher means good score.
     """
     global common_words, known_letter_freqs, known_letter_pairs_freqs, total_fitness_calls
     total_fitness_calls += 1
-    perm_total_score = 0
+
     # decreasing the absolut diff of the letter frequencies from the score
     # the closer the current perm letter frequency to the known letter frequency, less score will be decreased
     perm_letter_freqs = heuristics.compute_perm_letter_freq(perm_deciphered_file, known_letter_freqs)
-    letter_freq_diff = heuristics.compare_freqs(perm_letter_freqs, known_letter_freqs)
-    perm_total_score -= letter_freq_diff
+    letter_freq_diff = heuristics.compare_letter_freqs(perm_letter_freqs, known_letter_freqs)
 
     # decreasing the absolut diff of the letter pairs frequencies from the score
     pair_freqs = heuristics.compute_letter_pairs_freq(perm_deciphered_file, known_letter_pairs_freqs)
     pairs_freq_diff = heuristics.compare_pairs_freqs(pair_freqs, known_letter_pairs_freqs)
-    perm_total_score -= pairs_freq_diff
 
     # increasing the score in response to how many common words were detected
     words_score = heuristics.get_common_words_score(perm_deciphered_file, common_words)
-    perm_total_score += words_score
 
-    # return perm_total_score
+    # apply weights to score with respect to how significant each finding
     return -(letter_freq_diff * LETTER_WEIGHT) - (pairs_freq_diff * PAIR_WEIGHT) + (words_score * WORDS_WEIGHT)
 
 
@@ -174,10 +170,10 @@ def fitness_tal(perm_deciphered_file):
     return letter_score * LETTER_WEIGHT + pairs_score * PAIR_WEIGHT + words_score * WORDS_WEIGHT
 
 
-def generate_permutations(starting_population):
+def generate_permutations():
     alphabet = list(string.ascii_lowercase)
     permutations = []
-    for _ in range(starting_population):
+    for _ in range(POPULATION_SIZE):
         random.shuffle(alphabet)
         permutation = {letter: substitute for letter, substitute in zip(string.ascii_lowercase, alphabet)}
         permutations.append(permutation)
@@ -307,7 +303,7 @@ def run_round(permutations, curr_round):
     sorted_indices = sorted(set(range(len(fitness_scores))), key=lambda x: fitness_scores[x], reverse=True)
     # Calculate the number of the top scores that will be used in the next round
     num_top_scores = int(len(fitness_scores) * ELITE_PERCENT)
-    num_dropout_scores = int(len(fitness_scores) * DROPTOUT_PERCENT)
+    num_dropout_scores = int(len(fitness_scores) * DROPOUT_PERCENT)
     # Select these top ELITE_PERCENT of fitness scores and their corresponding permutations
     top_scores_indices = sorted_indices[:num_top_scores]
     top_scores_set = set(top_scores_indices)
@@ -500,7 +496,7 @@ def run_round_darwin(permutations, curr_round, N, fitness_scores, typeFlag):
 
 def main_PartB():
     read_files()
-    permutations = generate_permutations(POPULATION_SIZE)
+    permutations = generate_permutations()
     fitness_scores = []
     N = 5
     # 0 - darwian, 1 - lamarckian
@@ -572,7 +568,7 @@ def compare_dictionaries(curr_perm, true_perm):
 if __name__ == '__main__':
     # main_PartB()
     read_files()
-    permutations = generate_permutations(POPULATION_SIZE)
+    permutations = generate_permutations()
     for i in range(ROUNDS):
         print("Round: ", i + 1)
         permutations = run_round(permutations, i)

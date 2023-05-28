@@ -1,7 +1,8 @@
 import collections
 import string
 
-from main import COMMON_WEIGHT, IMPORTANT_WEIGHT
+COMMON_WEIGHT = 1.5
+IMPORTANT_WEIGHT = 2.5
 
 # TODO: remove as well
 COMMON_WORDS_SCORE = 10
@@ -69,7 +70,7 @@ def compute_perm_letter_freq(filename, known_letter_freqs):
 
 
 # compare current perm frequencies with the known frequencies
-def compare_freqs(perm_letter_freqs, known_letter_freqs):
+def compare_letter_freqs(perm_letter_freqs, known_letter_freqs):
     total_difference = 0
     for letter in string.ascii_lowercase:
         # Get the frequency of the letter in perm_letter_freqs
@@ -226,7 +227,7 @@ def get_common_words_info(perm_deciphered_file, common_words):
 #     # for letter, freq in sorted(perm_letter_freqs.items()):
 #     #     print(f'{letter}: {freq:.4f}')
 #
-#     difference = compare_freqs(perm_letter_freqs, known_letter_freqs)
+#     difference = compare_letter_freqs(perm_letter_freqs, known_letter_freqs)
 #     print(f'letters freq Total difference: {difference:.4f}')
 #
 #     pair_freqs = compute_letter_pairs_freq('output.txt', known_letter_pairs_freqs)
