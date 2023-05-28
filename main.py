@@ -3,19 +3,16 @@ import string
 import sys
 import copy
 import statistics
-import matplotlib.pyplot as plt
-import numpy as np
 import heuristics
 
 INPUT_ENC = "enc.txt"
 OUTPUT_FILE = "plain.txt"
-ELITE_PERCENT = 0.2
+ELITE_PERCENT = 0.1
 MUTATION_PERCENT = 0.3
 DROPOUT_PERCENT = 0.4
-POPULATION_SIZE = 300
+POPULATION_SIZE = 250
 STUCK_THRESHOLD = 15
-ROUNDS = 10
-
+ROUNDS = 150
 
 LETTER_WEIGHT = 1
 PAIR_WEIGHT = 10
@@ -87,10 +84,13 @@ TRUE_CODE = {'a': 'y', 'b': 'x', 'c': 'i', 'd': 'n', 'e': 't', 'f': 'o', 'g': 'z
 common_words = set()
 known_letter_freqs = {}
 known_letter_pairs_freqs = {}
-stats_list = []     # will hold tuples with (best, avg, worst) fintess scores of each round,
+stats_list = []     # will hold tuples with (best, avg, worst) fitness scores of each round,
 prev_best_fitness = -1000
 round_first_seen_best_fitness = -1000
 total_fitness_calls = 0
+
+# for plots:
+gen_and_score_tracker = []
 
 
 def find_and_replace(permutation, input_file, output_file):
@@ -131,44 +131,32 @@ def read_files():
                     break
 
 
-# TODO: update documentation and comments
 def get_fitness(perm_deciphered_file):
-    """ return this current perm fitness result.
-        lower fitness score means bad, higher means good score.
+    """ The function calculates the fitness score of the deciphered permutation file.
+        It compares the letter and letter pairs frequencies in the deciphered file against the given known frequencies.
+        It also counts the occurrence of common words. The function applies weights to each of these measurements,
+        and returns a final score indicating the quality of the deciphered permutation.
+        Lower fitness score means bad, higher means good.
+        The returned fitness score helps to guide the evolution process in selecting the best-performing permutations.
     """
     global common_words, known_letter_freqs, known_letter_pairs_freqs, total_fitness_calls
     total_fitness_calls += 1
 
-    # decreasing the absolut diff of the letter frequencies from the score
+    # letter_freq_diff will hold the absolut diff of the letter frequencies.
+    # it will be decreased from the score with the relevant weight later
     # the closer the current perm letter frequency to the known letter frequency, less score will be decreased
     perm_letter_freqs = heuristics.compute_perm_letter_freq(perm_deciphered_file, known_letter_freqs)
     letter_freq_diff = heuristics.compare_letter_freqs(perm_letter_freqs, known_letter_freqs)
 
-    # decreasing the absolut diff of the letter pairs frequencies from the score
+    # same for the letter pairs frequencies
     pair_freqs = heuristics.compute_letter_pairs_freq(perm_deciphered_file, known_letter_pairs_freqs)
     pairs_freq_diff = heuristics.compare_pairs_freqs(pair_freqs, known_letter_pairs_freqs)
 
-    # increasing the score in response to how many common words were detected
+    # increasing the score in response to how many common words were detected in the current deciphered file
     words_score = heuristics.get_common_words_score(perm_deciphered_file, common_words)
 
-    # apply weights to score with respect to how significant each finding
+    # apply weights to score with respect to how significant each finding is
     return -(letter_freq_diff * LETTER_WEIGHT) - (pairs_freq_diff * PAIR_WEIGHT) + (words_score * WORDS_WEIGHT)
-
-
-def fitness_tal(perm_deciphered_file):
-    """ return this current perm fitness result.
-        lower fitness score means bad, higher means good score.
-    """
-    global common_words, known_letter_freqs, known_letter_pairs_freqs
-    # TODO: problematic in the case where two letters have similar freq, how will it choose between them..? think if indeed a problem
-
-    # get the scores
-    letter_score = heuristics.get_letter_score(perm_deciphered_file, known_letter_freqs)
-    pairs_score = heuristics.get_pair_score(perm_deciphered_file, known_letter_pairs_freqs)
-    words_score = heuristics.get_common_words_score(perm_deciphered_file, common_words)
-    # return letter_score + pairs_score + words_score
-
-    return letter_score * LETTER_WEIGHT + pairs_score * PAIR_WEIGHT + words_score * WORDS_WEIGHT
 
 
 def generate_permutations():
@@ -258,7 +246,6 @@ def get_unique_value(values, unused_letters):
 def perform_mutation(permutation):
     """ the function performs mutation on the permutation dict.
     """
-    # TODO: mutate more than 2 values?
     keys = list(permutation.keys())
     # to avoid errors in case the permutation has less than two elements
     if len(keys) < 2:
@@ -278,7 +265,7 @@ def write_solution(best_perm):
 
 
 def before_exit():
-    # todo: should plot from here
+    # TODO: should plot from here
     exit()
 
 
@@ -288,16 +275,12 @@ def run_round(permutations, curr_round):
         The remaining permutations create children permutations by crossover, which will also be used in the next round.
         Together they make the new permutations list for the following round.
     """
-    global prev_best_fitness, round_first_seen_best_fitness, stats_list
+    global prev_best_fitness, round_first_seen_best_fitness, stats_list, gen_and_score_tracker
     fitness_scores = []
     crossover_children = []
     for perm in permutations:
         find_and_replace(perm, INPUT_ENC, OUTPUT_FILE)
-        # TODO: decide on fitness function
-        # fitness option 1:
         curr_perm_score = round(get_fitness(OUTPUT_FILE), 5)
-        # fitness option 2:
-        # curr_perm_score = round(fitness_tal("output.txt"), 5)
         fitness_scores.append(curr_perm_score)
 
     # create a new indices DESC sorted list of the fitness scores, while fitness_scores maintains its original order.
@@ -330,12 +313,17 @@ def run_round(permutations, curr_round):
     # selecting a subset of the new crossover children for another mutation
     for _ in range(int(len(crossover_children) * MUTATION_PERCENT)):
         # Get a random permutation from the crossover children
-        # TODO: mutate others as well/instead?
+        # TODO: mutate others as well/instead for a plot..?
         random_perm = random.choice(crossover_children)
         perform_mutation(random_perm)
 
     ### prints to keep track of the algorithm progress
     curr_best_fitness = max(fitness_scores)
+    # for plots
+    gen_and_score = (curr_best_fitness, curr_round + 1)
+    gen_and_score_tracker.append(gen_and_score)
+    print(gen_and_score_tracker)
+
     curr_worst_fitness = min(fitness_scores)
     curr_avg_fitness = statistics.mean(fitness_scores)
     stats_list.append((curr_best_fitness, curr_avg_fitness, curr_worst_fitness))
@@ -365,7 +353,6 @@ def run_round(permutations, curr_round):
     elif is_stuck(curr_round, curr_best_fitness) < STUCK_THRESHOLD:
         # if not stuck
         if curr_best_fitness > prev_best_fitness:
-            # update fitness global variables if improved #### TODO: should be if worsen as well???
             prev_best_fitness = curr_best_fitness
             round_first_seen_best_fitness = curr_round
         return next_round_perms
@@ -422,7 +409,7 @@ def run_round_darwin(permutations, curr_round, N, fitness_scores, typeFlag):
     sorted_indices = sorted(set(range(len(fitness_scores))), key=lambda x: fitness_scores[x], reverse=True)
     # Calculate the number of the top scores that will be used in the next round
     num_top_scores = int(len(fitness_scores) * ELITE_PERCENT)
-    num_dropout_scores = int(len(fitness_scores) * DROPTOUT_PERCENT)
+    num_dropout_scores = int(len(fitness_scores) * DROPOUT_PERCENT)
     # Select these top ELITE_PERCENT of fitness scores and their corresponding permutations
     top_scores_indices = sorted_indices[:num_top_scores]
     top_scores_set = set(top_scores_indices)
@@ -484,7 +471,6 @@ def run_round_darwin(permutations, curr_round, N, fitness_scores, typeFlag):
     elif is_stuck(curr_round, curr_best_fitness) < STUCK_THRESHOLD:
         # if not stuck
         if curr_best_fitness > prev_best_fitness:
-            # update fitness global variables if improved #### TODO: should be if worsen as well???
             prev_best_fitness = curr_best_fitness
             round_first_seen_best_fitness = curr_round
         return next_round_perms, next_round_fitness
