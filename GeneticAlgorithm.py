@@ -49,11 +49,8 @@ def find_and_replace(permutation, input_file, output_file):
 
 
 def read_files():
+    """ reads additional data given for this exercise, and saves it in global variables.
     """
-    Funtion that reads additional data given for this exercise, and saves them in a global variables.
-    :return: None.
-    """
-    # TODO: before submit check where the given files are located on the testers computers
     global common_words, known_letter_freqs, known_letter_pairs_freqs
     # Load the word list, and the letter and digraph frequencies
     with open('dict.txt', 'r') as f:
@@ -210,7 +207,7 @@ def perform_mutation(permutation):
 def write_solution(best_perm):
     """
     Writes the best permutation to perm.txt.
-    :param best_perm: the best permutation from the code.
+    param best_perm: the best permutation from the code.
     """
     print(f"Total number of calls for fitness function is: {total_fitness_calls}")
     with open('perm.txt', 'w') as file:
@@ -263,7 +260,6 @@ def run_round(permutations, curr_round):
     # selecting a subset of the new crossover children for another mutation
     for _ in range(int(len(crossover_children) * MUTATION_PERCENT)):
         # Get a random permutation from the crossover children
-        # TODO: mutate others as well/instead for a plot..?
         random_perm = random.choice(crossover_children)
         perform_mutation(random_perm)
 
@@ -291,7 +287,7 @@ def run_round(permutations, curr_round):
             round_first_seen_best_fitness = curr_round
         return next_round_perms
     else:
-        # stuck, early convergence
+        # stuck
         print("Stuck - fitness hasn't changed for:", STUCK_THRESHOLD, " rounds")
         write_solution(best_perm)
         sys.exit()
@@ -375,13 +371,10 @@ def run_round_darwin(permutations, curr_round, N, fitness_scores, typeFlag):
         next_round_perms.append(new_perm)
         next_round_fitness.append(new_fitness)
 
-
-    ### prints to keep track of the algorithm progress
     curr_best_fitness = max(next_round_fitness)
     best_perm = next_round_perms[next_round_fitness.index(curr_best_fitness)]
-    # create the deciphered file with the best perm we found so far (THIS PART SHOULD STAY AFTER TESTS)
+    # create the deciphered file with the best perm we found so far
     find_and_replace(best_perm, INPUT_ENC, OUTPUT_FILE)
-    # add the top permutations to the crossover children and return as the next round permutations
 
     # convergence checks:
     if is_max_round(curr_round):
@@ -400,7 +393,7 @@ def run_round_darwin(permutations, curr_round, N, fitness_scores, typeFlag):
             round_first_seen_best_fitness = curr_round
         return next_round_perms, next_round_fitness
     else:
-        # stuck, early convergence
+        # stuck
         print("Stuck - fitness hasn't changed for:", STUCK_THRESHOLD, " rounds")
         write_solution(best_perm)
         sys.exit()
@@ -409,7 +402,7 @@ def run_round_darwin(permutations, curr_round, N, fitness_scores, typeFlag):
 def main_PartB(algorithm):
     """
     Function will run part B of exercise.
-    :param algorithm: type of genetic algorithm. 0 - darwian, 1 - lamarckian
+    param algorithm: type of genetic algorithm. 0 - darwian, 1 - lamarckian
     :return: None.
     """
     read_files()
@@ -423,9 +416,8 @@ def main_PartB(algorithm):
 
 
 def is_stuck(curr_round, curr_best_fitness):
-    """
-    checks for early convergence:
-        checks if the fitness score is stuck and stays the same for STUCK_THRESHOLD rounds.
+    """ checks if the fitness score is stuck and stays the same for STUCK_THRESHOLD rounds.
+        if stuck, finish the run of the program.
     """
     global prev_best_fitness, round_first_seen_best_fitness
 
@@ -440,7 +432,7 @@ def is_stuck(curr_round, curr_best_fitness):
 
 def is_max_round(curr_round):
     """
-    check if reached max rounds
+    checks if reached max rounds
     :param curr_round: current round of main algorithm.
     :return: True if reached max depth, false otherwise.
     """
@@ -473,9 +465,7 @@ def intersection_percent_with_common_words(perm_deciphered_file):
             intersect_percentage = (intersect_words_count / len(output_words)) * 100
             intersect_percentage = round(intersect_percentage, 4)
 
-    print("intersection percentage: ", intersect_percentage)
     return intersect_percentage
-
 
 
 if __name__ == '__main__':

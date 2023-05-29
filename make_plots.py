@@ -33,13 +33,6 @@ def population_vs_gen_and_fitness_plot():
     plt.legend(loc='lower right')
     plt.grid(True)
 
-    # add score annotation for clearer representation
-    # plt.annotate(f'{round(score_100[-1], 3)}', xy=(gen_100[-1], score_100[-1]), textcoords="offset points", xytext=(2, 2), ha='center')
-    # plt.annotate(f'{round(score_200[-1], 3)}', xy=(gen_200[-1], score_200[-1]), textcoords="offset points", xytext=(2, 2), ha='center')
-    # plt.annotate(f'{round(score_300[-1], 3)}', xy=(gen_300[-1], score_300[-1]), textcoords="offset points", xytext=(2, 2), ha='center')
-    # plt.annotate(f'{round(score_400[-1], 3)}', xy=(gen_400[-1], score_400[-1]), textcoords="offset points", xytext=(2, 2), ha='center')
-    # plt.annotate(f'{round(score_500[-1], 3)}', xy=(gen_500[-1], score_500[-1]), textcoords="offset points", xytext=(2, 2), ha='center')
-
     # add gen annotation for clearer representation
     plt.annotate(f'{gen_100[-1]}', xy=(gen_100[-1], score_100[-1]), textcoords="offset points", xytext=(5, 5), ha='center')
     plt.annotate(f'{gen_200[-1]}', xy=(gen_200[-1], score_200[-1]), textcoords="offset points", xytext=(5, 5), ha='center')
