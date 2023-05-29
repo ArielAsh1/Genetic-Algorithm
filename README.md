@@ -12,8 +12,13 @@ It offers three types of algorithms: classic, Darwinian, and Lamarckian.
 
 1. Clone the repository to your local machine:
 2. Navigate to the project directory
-3. Run the program: GeneticAlgorithm.py 
+3. Run the program: GeneticAlgorithm.py
 4. Follow the prompts to choose the algorithm type (0 for classic, 1 for Darwinian, 2 for Lamarckian) and provide the required inputs.
+
+IMPORTANT NOTE: The code assumes that you have the following files in the working directory folder:
+enc.txt: a text file to decipher.
+dict.txt: a text file containing dictionary words from the English alphabet.
+letter_Freq.txt and letter2_Freq.txt: text files containing the frequencies for each letter and letter pairs in the English alphabet.
 
 ## Algorithm Types
 
