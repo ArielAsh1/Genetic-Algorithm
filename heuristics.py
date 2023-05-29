@@ -4,51 +4,6 @@ import string
 COMMON_WEIGHT = 1.5
 IMPORTANT_WEIGHT = 2.5
 
-# TODO: remove as well
-COMMON_WORDS_SCORE = 10
-IMPORTANT_WORDS_SCORE = 25
-
-
-def get_letter_score(filename, known_letter_freqs):
-    """ count the occurrences of each letter on our deciphered output text, and multiply that count with
-        the known frequency of that letter, which is given in the "Letter_Freq" file.
-    """
-    # a dict to count occurrences of each letter (keys copied from known_letter_freqs)
-    letter_counter = collections.Counter(dict.fromkeys(known_letter_freqs.keys(), 0))
-    with open(filename, 'r') as f:
-        deciphered_file = f.read().lower()
-    # Count occurrences of each letter in the deciphered_file
-    for letter in deciphered_file:
-        if letter in letter_counter:
-            letter_counter[letter] += 1
-
-    # Multiply the count of each letter by the known frequency of that letter
-    letter_scores = {letter: count * known_letter_freqs[letter] for letter, count in letter_counter.items()}
-    # Sum up the scores to get the total score
-    total_score = sum(letter_scores.values())
-    return total_score
-
-
-def get_pair_score(filename, known_letter_pairs_freqs):
-    """ count the occurrences of each pair of letters on our deciphered output text, and multiply that count with
-        the known frequency of that pair, which is given in the "Letter_Freq2" file.
-    """
-    # a dict to count occurrences of each pair of letters (keys copied from known_letter_pairs_freqs)
-    pair_counter = collections.Counter(dict.fromkeys(known_letter_pairs_freqs.keys(), 0))
-    with open(filename, 'r') as f:
-        deciphered_file = f.read().lower()
-    # Run through all pairs in the file and count their occurrences
-    for i in range(len(deciphered_file) - 1):
-        pair = deciphered_file[i:i + 2]
-        if pair in pair_counter:
-            pair_counter[pair] += 1
-
-    # Multiply the count of each pair by the known frequency of that pair
-    pair_scores = {pair: count * known_letter_pairs_freqs[pair] for pair, count in pair_counter.items()}
-    # Sum up the scores to get the total score
-    total_score = sum(pair_scores.values())
-    return total_score
-
 
 def compute_perm_letter_freq(filename, known_letter_freqs):
     """ for each permutation, compute the frequencies of each letter on our deciphered output text,
@@ -124,22 +79,6 @@ def get_common_words_score(perm_deciphered_file, common_words):
         it also tries to match some specified important words.
         It then assigns specific scores based on the frequency of these words.
     """
-    # TODO: this code will be removed
-    # file_score = 0
-    # important_words = {"i", "a"}
-    # with open(perm_deciphered_file, "r") as deciphered_file:
-    #     for line in deciphered_file:
-    #         words = line.split()
-    #         for word in words:
-    #             if word.isalpha():
-    #                 if word.lower() in common_words:
-    #                     # If the word is in common_words, increment the score with COMMON_WORDS_SCORE
-    #                     file_score += COMMON_WORDS_SCORE
-    #                 elif word.lower in important_words:
-    #                     # If the word is in important_words, increment the score with IMPORTANT_WORDS_SCORE
-    #                     file_score += IMPORTANT_WORDS_SCORE
-    # return file_score
-
     perm_words_score = 0
     common_words_found = 0
     important_words_found = 0
@@ -163,6 +102,7 @@ def get_common_words_score(perm_deciphered_file, common_words):
     return perm_words_score
 
 
+# TODO: decide
 # new combined func
 def get_common_words_info(perm_deciphered_file, common_words):
     """
@@ -217,23 +157,3 @@ def get_common_words_info(perm_deciphered_file, common_words):
 
     print("intersect_percentage: ", intersect_percentage)
     return perm_words_score, intersect_percentage
-
-
-
-# if __name__ == '__main__':
-#     global common_words, known_letter_freqs, known_letter_pairs_freqs
-#
-#     perm_letter_freqs = compute_perm_letter_freq('output.txt', known_letter_freqs)
-#     # for letter, freq in sorted(perm_letter_freqs.items()):
-#     #     print(f'{letter}: {freq:.4f}')
-#
-#     difference = compare_letter_freqs(perm_letter_freqs, known_letter_freqs)
-#     print(f'letters freq Total difference: {difference:.4f}')
-#
-#     pair_freqs = compute_letter_pairs_freq('output.txt', known_letter_pairs_freqs)
-#     # for pair, freq in sorted(pair_freqs.items()):
-#     #     print(f'{pair}: {freq:.4f}')
-#
-#     difference = compare_pairs_freqs(pair_freqs, known_letter_pairs_freqs)
-#     print(f'pairs freq Total difference: {difference:.4f}')
-#
