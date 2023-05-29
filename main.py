@@ -2,9 +2,6 @@ import random
 import string
 import sys
 import copy
-import statistics
-import matplotlib.pyplot as plt
-import numpy as np
 import heuristics
 
 INPUT_ENC = "enc.txt"
@@ -15,86 +12,28 @@ DROPOUT_PERCENT = 0.4
 POPULATION_SIZE = 250
 STUCK_THRESHOLD = 15
 ROUNDS = 150
-
 LETTER_WEIGHT = 1
 PAIR_WEIGHT = 10
 WORDS_WEIGHT = 5
-
-# test1
-TRUE_CODE = {'a': 'y', 'b': 'x', 'c': 'i', 'd': 'n', 'e': 't', 'f': 'o', 'g': 'z', 'h': 'j', 'i': 'c', 'j': 'e',
-            'k': 'b', 'l': 'l', 'm': 'd', 'n': 'u', 'o': 'k', 'p': 'm', 'q': 's', 'r': 'v', 's': 'p', 't': 'q',
-            'u': 'r', 'v': 'h', 'w': 'w', 'x': 'g', 'y': 'a', 'z': 'f'}
-#test2
-# TRUE_CODE = {
-#     'a': 'q',
-#     'b': 'w',
-#     'c': 'e',
-#     'd': 'r',
-#     'e': 't',
-#     'f': 'y',
-#     'g': 'u',
-#     'h': 'i',
-#     'i': 'o',
-#     'j': 'p',
-#     'k': 'a',
-#     'l': 's',
-#     'm': 'd',
-#     'n': 'f',
-#     'o': 'g',
-#     'p': 'h',
-#     'q': 'k',
-#     'r': 'j',
-#     's': 'l',
-#     't': 'z',
-#     'u': 'x',
-#     'v': 'c',
-#     'w': 'v',
-#     'x': 'b',
-#     'y': 'n',
-#     'z': 'm'
-# }
-# test3
-# TRUE_CODE = {
-#     'a': 'q',
-#     'b': 'w',
-#     'c': 'e',
-#     'd': 'r',
-#     'e': 't',
-#     'f': 'y',
-#     'g': 'u',
-#     'h': 'i',
-#     'i': 'o',
-#     'j': 'p',
-#     'k': 'a',
-#     'l': 's',
-#     'm': 'd',
-#     'n': 'f',
-#     'o': 'g',
-#     'p': 'h',
-#     'q': 'j',
-#     'r': 'k',
-#     's': 'l',
-#     't': 'z',
-#     'u': 'x',
-#     'v': 'c',
-#     'w': 'v',
-#     'x': 'b',
-#     'y': 'n',
-#     'z': 'm'}
 
 # global variables
 common_words = set()
 known_letter_freqs = {}
 known_letter_pairs_freqs = {}
-stats_list = []     # will hold tuples with (best, avg, worst) fitness scores of each round,
 prev_best_fitness = -1000
 round_first_seen_best_fitness = -1000
 total_fitness_calls = 0
-# for plots:
-gen_and_score_tracker = []
+
 
 
 def find_and_replace(permutation, input_file, output_file):
+    """
+    Find and replace characters in the input file based on the given permutation and write the modified content to the
+    output file.
+    :param permutation: Dictionary mapping characters to their replacement values
+    :param input_file: Path to the input file
+    :param output_file: Path to the output file
+    """
     with open(input_file, 'r') as file_in, open(output_file, 'w') as file_out:
         for line in file_in:
             converted_line = ''
@@ -110,6 +49,10 @@ def find_and_replace(permutation, input_file, output_file):
 
 
 def read_files():
+    """
+    Funtion that reads additional data given for this exercise, and saves them in a global variables.
+    :return: None.
+    """
     # TODO: before submit check where the given files are located on the testers computers
     global common_words, known_letter_freqs, known_letter_pairs_freqs
     # Load the word list, and the letter and digraph frequencies
@@ -161,6 +104,10 @@ def get_fitness(perm_deciphered_file):
 
 
 def generate_permutations():
+    """
+    Generates random alphabetic permutation the size fo POPULATION_SIZE.
+    :return: a list of perm dicts.
+    """
     alphabet = list(string.ascii_lowercase)
     permutations = []
     for _ in range(POPULATION_SIZE):
@@ -245,7 +192,8 @@ def get_unique_value(values, unused_letters):
 
 
 def perform_mutation(permutation):
-    """ the function performs mutation on the permutation dict.
+    """
+    the function performs mutation on the permutation dict.
     """
     keys = list(permutation.keys())
     # to avoid errors in case the permutation has less than two elements
@@ -258,16 +206,17 @@ def perform_mutation(permutation):
     permutation[key1] = value2
     permutation[key2] = value1
 
+
 def write_solution(best_perm):
+    """
+    Writes the best permutation to perm.txt.
+    :param best_perm: the best permutation from the code.
+    """
     print(f"Total number of calls for fitness function is: {total_fitness_calls}")
     with open('perm.txt', 'w') as file:
         for key, value in best_perm.items():
             file.write(f'{key} {value}\n')
 
-
-def before_exit():
-    # TODO: should plot from here
-    exit()
 
 
 def run_round(permutations, curr_round):
@@ -318,24 +267,10 @@ def run_round(permutations, curr_round):
         random_perm = random.choice(crossover_children)
         perform_mutation(random_perm)
 
-    ### prints to keep track of the algorithm progress
     curr_best_fitness = max(fitness_scores)
-    # for plots
-    gen_and_score = (curr_best_fitness, curr_round + 1)
-    gen_and_score_tracker.append(gen_and_score)
-    print(gen_and_score_tracker)
-
-    curr_worst_fitness = min(fitness_scores)
-    curr_avg_fitness = statistics.mean(fitness_scores)
-    stats_list.append((curr_best_fitness, curr_avg_fitness, curr_worst_fitness))
-    print("####### CURRENT ROUND BEST FITNESS SCORE: ", curr_best_fitness)
-    # print("it's index: ", fitness_scores.index(curr_best_fitness))
     best_perm = permutations[fitness_scores.index(curr_best_fitness)]
-    # print("it's permutation: ", best_perm)
-    print("Equal percent: " + str(compare_dictionaries(best_perm, TRUE_CODE)))
     # create the deciphered file with the best perm we found so far (THIS PART SHOULD STAY AFTER TESTS)
     find_and_replace(best_perm, INPUT_ENC, OUTPUT_FILE)
-
     # add the top permutations to the crossover children and return as the next round permutations
     next_round_perms = crossover_children + top_permutations
 
@@ -343,13 +278,11 @@ def run_round(permutations, curr_round):
     if is_max_round(curr_round):
         print("Reached max rounds")
         write_solution(best_perm)
-        before_exit()
-        # sys.exit()
+        sys.exit()
     elif intersection_percent_with_common_words(OUTPUT_FILE) == 100:
         print("CONVERGED, all deciphered output words are in common words")
         write_solution(best_perm)
-        before_exit()
-        # sys.exit()
+        sys.exit()
     # check if fitness score is stuck
     elif is_stuck(curr_round, curr_best_fitness) < STUCK_THRESHOLD:
         # if not stuck
@@ -361,17 +294,15 @@ def run_round(permutations, curr_round):
         # stuck, early convergence
         print("Stuck - fitness hasn't changed for:", STUCK_THRESHOLD, " rounds")
         write_solution(best_perm)
-        before_exit()
-        # sys.exit()
+        sys.exit()
 
 
-def check_local_optimum(permutation, old_fitness, N, typeFlag):
+def check_local_optimum(permutation, N, typeFlag):
     """
     Function is responsible to run local optimum for Part B of the exercise.
     It performs a number (N) of mutations for input permutation, and then, according to the type of the run,
     returns the new/old permutation and its current fitness score.
     :param permutation: a permutation, which is a cnadidate for solution.
-    :param old_fitness: the current fitness score of permutation.
     :param N: the number of mutations to perform on each permutation.
     :param typeFlag: 0 for darwin, 1 for lamarckian
     :return: if darwian - the old permutations and its new fitness score.
@@ -440,25 +371,14 @@ def run_round_darwin(permutations, curr_round, N, fitness_scores, typeFlag):
     next_round_fitness = []
     for i in range(len(joined_perms)):
         perm = joined_perms[i]
-        find_and_replace(perm, INPUT_ENC, OUTPUT_FILE)
-        curr_fitness = round(get_fitness(OUTPUT_FILE), 5)
-        # curr_fitness = fitness_scores[i]
-        new_perm, new_fitness = check_local_optimum(perm, curr_fitness, N, typeFlag)
+        new_perm, new_fitness = check_local_optimum(perm, N, typeFlag)
         next_round_perms.append(new_perm)
         next_round_fitness.append(new_fitness)
 
 
     ### prints to keep track of the algorithm progress
     curr_best_fitness = max(next_round_fitness)
-    # for plots
-    gen_and_score = (curr_best_fitness, curr_round + 1)
-    gen_and_score_tracker.append(gen_and_score)
-    print(gen_and_score_tracker)
-    print("####### CURRENT ROUND BEST FITNESS SCORE: ", curr_best_fitness)
-    # print("it's index: ", fitness_scores.index(curr_best_fitness))
     best_perm = next_round_perms[next_round_fitness.index(curr_best_fitness)]
-    # print("it's permutation: ", best_perm)
-    print("Equal percent: " + str(compare_dictionaries(best_perm, TRUE_CODE)))
     # create the deciphered file with the best perm we found so far (THIS PART SHOULD STAY AFTER TESTS)
     find_and_replace(best_perm, INPUT_ENC, OUTPUT_FILE)
     # add the top permutations to the crossover children and return as the next round permutations
@@ -486,19 +406,25 @@ def run_round_darwin(permutations, curr_round, N, fitness_scores, typeFlag):
         sys.exit()
 
 
-def main_PartB():
+def main_PartB(algorithm):
+    """
+    Function will run part B of exercise.
+    :param algorithm: type of genetic algorithm. 0 - darwian, 1 - lamarckian
+    :return: None.
+    """
     read_files()
     permutations = generate_permutations()
     fitness_scores = []
     N = 5
-    # 0 - darwian, 1 - lamarckian
-    typeFlag = 0
+    typeFlag = algorithm
     for i in range(ROUNDS):
         print("Round: ", i + 1)
         permutations, fitness_scores = run_round_darwin(permutations, i, N, fitness_scores, typeFlag)
 
+
 def is_stuck(curr_round, curr_best_fitness):
-    """ checks for early convergence-
+    """
+    checks for early convergence:
         checks if the fitness score is stuck and stays the same for STUCK_THRESHOLD rounds.
     """
     global prev_best_fitness, round_first_seen_best_fitness
@@ -512,8 +438,12 @@ def is_stuck(curr_round, curr_best_fitness):
         return 0
 
 
-# check if reached max rounds
 def is_max_round(curr_round):
+    """
+    check if reached max rounds
+    :param curr_round: current round of main algorithm.
+    :return: True if reached max depth, false otherwise.
+    """
     if curr_round == ROUNDS - 1:
         return True
     else:
@@ -521,7 +451,8 @@ def is_max_round(curr_round):
 
 
 def intersection_percent_with_common_words(perm_deciphered_file):
-    """ calculates and returns the percentage of common words that appear in this permutation output file.
+    """
+    calculates and returns the percentage of common words that appear in this permutation output file.
     """
     global common_words
     intersect_percentage = 0
@@ -546,21 +477,33 @@ def intersection_percent_with_common_words(perm_deciphered_file):
     return intersect_percentage
 
 
-# helper function FOR TESTS ONLY, true_perm will not be accessible in the real world
-def compare_dictionaries(curr_perm, true_perm):
-    matches = 0
-    for key in curr_perm:
-        if curr_perm[key] == true_perm[key]:
-            matches += 1
-    total_pairs = len(curr_perm)
-    match_percentage = (matches / total_pairs) * 100
-    return match_percentage, f"{matches}/{total_pairs}"
-
 
 if __name__ == '__main__':
-    # main_PartB()
-    read_files()
-    permutations = generate_permutations()
-    for i in range(ROUNDS):
-        print("Round: ", i + 1)
-        permutations = run_round(permutations, i)
+    print("Welcome to the Genetic Algorithm for Cryptanalysis!")
+    print("This program aims to decrypt ciphers using genetic algorithms.")
+    print("Please select the type of algorithm you want to use:")
+    print("0 - Classic Genetic Algorithm")
+    print("1 - Darwinian Genetic Algorithm")
+    print("2 - Lamarckian Genetic Algorithm")
+    valid_input = False
+    user_input = -1
+    while not valid_input:
+        user_input = input("Please enter 0, 1, or 2: ")
+        try:
+            user_input = int(user_input)
+            if user_input in [0, 1, 2]:
+                valid_input = True
+            else:
+                print("Invalid input. Please enter 0, 1, or 2.")
+        except ValueError:
+            print("Invalid input. Please enter a valid integer.")
+    if user_input == 0:
+        read_files()
+        permutations = generate_permutations()
+        for i in range(ROUNDS):
+            print("Round: ", i + 1)
+            permutations = run_round(permutations, i)
+
+    else:
+        main_PartB(user_input - 1)
+
